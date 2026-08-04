@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>North Star Data &amp; AI Platform</title>
+<style>
+  :root{
+    --navy:#153A6B; --navy-d:#0E2A50;
+    --teal:#0E7A6B; --gold:#B5811A; --bronze:#A85C22;
+    --ink:#16202E; --mute:#5C6B7F;
+    --line:#D8DFE8; --bg:#FFFFFF; --panel:#F5F8FB;
+    --agent:#6D3FA8;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:400 16px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .slide{max-width:1440px;margin:0 auto;padding:28px 32px 24px}
+
+  /* ---------- header ---------- */
+  header{text-align:center;margin-bottom:22px}
+  h1{
+    margin:0; font-size:clamp(26px,3.1vw,40px); font-weight:800;
+    letter-spacing:-.02em; color:var(--navy);
+  }
+  .tag{margin:6px 0 0;font-size:clamp(13px,1.35vw,17px);font-weight:600;color:var(--teal)}
+
+  /* ---------- layout ---------- */
+  .body{display:grid;grid-template-columns:132px 1fr 232px;gap:16px;align-items:stretch}
+
+  .rail{
+    border:1px solid var(--line);border-radius:12px;background:var(--panel);
+    padding:14px 12px;display:flex;flex-direction:column;
+  }
+  .rail h3{
+    margin:0 0 10px;font-size:10.5px;font-weight:800;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--mute)
+  }
+  .rail li{list-style:none;font-size:13px;font-weight:600;padding:5px 0;color:#2C3B4E}
+  .rail ul{margin:0;padding:0}
+
+  .stack{display:flex;flex-direction:column;gap:10px}
+
+  /* band = one horizontal layer */
+  .band{border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+  .band .hd{
+    padding:7px 14px;font-size:11px;font-weight:800;letter-spacing:.1em;
+    text-transform:uppercase;color:#fff;background:var(--navy);
+  }
+  .band .bd{display:grid;gap:8px;padding:10px;background:#fff}
+
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+
+  .card{
+    border:1px solid var(--line);border-radius:9px;padding:11px 12px;background:#fff;
+  }
+  .card b{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .card span{display:block;margin-top:2px;font-size:12px;color:var(--mute)}
+
+  /* lakehouse tiers */
+  .tier{
+    display:flex;align-items:baseline;gap:12px;
+    border:1px solid var(--line);border-left-width:5px;border-radius:8px;padding:9px 13px;
+  }
+  .tier b{font-size:15px;font-weight:800;letter-spacing:.01em;min-width:74px}
+  .tier span{font-size:13px;color:#41505F}
+  .gold{border-left-color:var(--gold)}   .gold b{color:var(--gold)}
+  .silver{border-left-color:#8A97A6}     .silver b{color:#67737F}
+  .bronze{border-left-color:var(--bronze)}.bronze b{color:var(--bronze)}
+
+  /* reusable services */
+  .svc .hd{background:var(--teal)}
+  .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;background:#fff}
+  .chip{
+    border:1px solid #C9DED9;background:#F2F9F7;border-radius:8px;
+    padding:9px 11px;font-size:14px;font-weight:700;color:#0B5F53;text-align:center;
+  }
+  .chip.hi{background:var(--teal);border-color:var(--teal);color:#fff}
+
+  /* thin bands */
+  .strip{
+    border:1px solid var(--line);border-radius:10px;background:var(--panel);
+    padding:9px 14px;display:flex;align-items:center;gap:14px;
+  }
+  .strip b{
+    font-size:10.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--mute);white-space:nowrap
+  }
+  .strip span{font-size:13.5px;font-weight:600;color:#33445A}
+
+  .arrow{text-align:center;color:#9AA8B8;font-size:15px;line-height:1;margin:-3px 0}
+
+  /* right rail: the punchline */
+  .split{gap:12px;background:#fff}
+  .mode{border-radius:10px;padding:12px;border:1px solid var(--line)}
+  .mode.det{background:#EEF3FA;border-color:#C6D6EC}
+  .mode.agt{background:#F4EFFB;border-color:#DDCCF0}
+  .mode h4{margin:0 0 5px;font-size:13.5px;font-weight:800}
+  .det h4{color:var(--navy)} .agt h4{color:var(--agent)}
+  .mode p{margin:0;font-size:12px;line-height:1.5;color:#44536A;font-weight:600}
+  .rule{
+    margin-top:auto;padding-top:12px;font-size:11.5px;line-height:1.5;
+    color:var(--mute);font-weight:600;border-top:1px solid var(--line)
+  }
+
+  /* outcomes */
+  .out{
+    margin-top:14px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;
+    border-top:2px solid var(--navy);padding-top:12px
+  }
+  .out div{text-align:center}
+  .out b{display:block;font-size:15px;font-weight:800;color:var(--navy)}
+  .out span{display:block;font-size:12px;color:var(--mute);margin-top:2px}
+
+  @media print{
+    @page{size:landscape;margin:8mm}
+    body{background:#fff}
+    .slide{max-width:none;padding:0}
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+
+  <header>
+    <h1>North Star Data &amp; AI Platform</h1>
+    <p class="tag">Build once. Reuse everywhere. Govern by design. Operate intelligently.</p>
+  </header>
+
+  <div class="body">
+
+    <!-- LEFT: sources -->
+    <aside class="rail">
+      <h3>Sources</h3>
+      <ul>
+        <li>Applications</li>
+        <li>Databases</li>
+        <li>APIs &amp; Files</li>
+        <li>Events</li>
+        <li>3rd Party</li>
+      </ul>
+    </aside>
+
+    <!-- CENTER: the stack -->
+    <main class="stack">
+
+      <section class="band">
+        <div class="hd">Consumers</div>
+        <div class="bd g3">
+          <div class="card"><b>BI &amp; Analytics</b><span>Dashboards, self-service</span></div>
+          <div class="card"><b>ML Engineering</b><span>Features, training, models</span></div>
+          <div class="card"><b>AI Engineering</b><span>Agents, RAG, copilots</span></div>
+        </div>
+      </section>
+
+      <div class="arrow">▲</div>
+
+      <section class="band">
+        <div class="hd">Lakehouse Foundation</div>
+        <div class="bd">
+          <div class="tier gold"><b>Gold</b><span>Curated data products &amp; features — business certified</span></div>
+          <div class="tier silver"><b>Silver</b><span>Conformed and cleansed — reusable across domains</span></div>
+          <div class="tier bronze"><b>Bronze</b><span>Raw and immutable — always re-processable</span></div>
+        </div>
+      </section>
+
+      <div class="arrow">▲</div>
+
+      <div class="strip">
+        <b>Ingest &amp; Transform</b>
+        <span>Batch · Stream · CDC · Orchestration · Integration</span>
+      </div>
+
+      <div class="arrow">▲</div>
+
+      <section class="band svc">
+        <div class="hd">Reusable Platform Services &nbsp;—&nbsp; built once, consumed by every project</div>
+        <div class="chips">
+          <div class="chip">Catalog &amp; Lineage</div>
+          <div class="chip">Data Quality</div>
+          <div class="chip">Testing</div>
+          <div class="chip">Observability</div>
+          <div class="chip">Cost &amp; FinOps</div>
+          <div class="chip hi">Ops Gate</div>
+          <div class="chip hi">Self-Healing</div>
+          <div class="chip">Security &amp; Governance</div>
+        </div>
+      </section>
+
+      <div class="strip">
+        <b>Foundation</b>
+        <span>Cloud · CI/CD &amp; IaC · Governance · Compliance · Ways of working</span>
+      </div>
+
+    </main>
+
+    <!-- RIGHT: the punchline -->
+    <aside class="rail split">
+      <h3>How it operates</h3>
+      <div class="mode det">
+        <h4>Deterministic controls</h4>
+        <p>Rules · Policies · Validations · Gates</p>
+      </div>
+      <div class="mode agt">
+        <h4>Agentic intelligence</h4>
+        <p>Diagnose · Recommend · Remediate · Learn</p>
+      </div>
+      <p class="rule">Deterministic by default.<br>Agentic only where judgement is genuinely required.</p>
+    </aside>
+
+  </div>
+
+  <div class="out">
+    <div><b>Trusted</b><span>Quality by design</span></div>
+    <div><b>Faster</b><span>Reusable, automated</span></div>
+    <div><b>Cost optimized</b><span>Efficient, transparent</span></div>
+    <div><b>AI ready</b><span>Scalable, governed</span></div>
+  </div>
+
+</div>
+</body>
+</html>
