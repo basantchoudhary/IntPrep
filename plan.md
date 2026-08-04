@@ -92,6 +92,19 @@ this one is explicitly designed so the agent *doesn't*.
 | **T2** Assurance & regulatory | Ops Gate Agent as the assurance bar; deterministic control plane | The checklist artefact itself; measurable reduction in production risk / rework |
 | **T3** Stakeholders & reuse | Base → composite agent tiering; Ops Gate shipped as a skill | Named adopters / audiences; mentoring evidence |
 
+## Decks
+
+Each capability has two decks: **architecture** for the room, **design** for the drill-down.
+
+| Capability | Architecture (2 pages) | Design (+ backups) |
+|---|---|---|
+| Ops Gate | [ops-gate-architecture.html](agents/ops-gate/ops-gate-architecture.html) | [ops-gate-design.html](agents/ops-gate/ops-gate-design.html) · [checks.sample.yaml](agents/ops-gate/checks.sample.yaml) |
+| Ops Self-Monitoring & Self-Healing | [ops-self-healing-architecture.html](agents/ops-self-healing/ops-self-healing-architecture.html) | [ops-self-healing-design.html](agents/ops-self-healing/ops-self-healing-design.html) · [policy.sample.yaml](agents/ops-self-healing/policy.sample.yaml) |
+| Platform | [north-star-simplified.html](architecture/north-star-simplified.html) | [north-star-platform.md](architecture/north-star-platform.md) |
+| Principles | [principles.html](architecture/principles.html) | [principles.md](architecture/principles.md) |
+
+Present the architecture decks. Open a design deck only if the panel drills.
+
 ## Build repository
 
 Code lives in a separate repo: **DataPlatformSuite** — https://github.com/basantchoudhary/DataPlatformSuite

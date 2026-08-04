@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ops Self-Healing — Detailed Design</title>
+<title>Ops Self-Monitoring & Self-Healing — High-Level Architecture</title>
 <style>
   :root{
     --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
@@ -186,200 +186,140 @@
 
 <section class="page">
   <div class="ph">
-    <span class="k">Design</span>
-    <h2>Ops Self-Healing — Detailed Design</h2>
-    <span class="s">Bounded authority &middot; mandatory validation &middot; complete evidence</span>
-  </div>
-
-  <div class="sect grid g3">
-    <div class="sp d">
-      <h4>Deterministic — most of the loop</h4>
-      <p>Detection, the action-class decision, the runbook action itself, validation, revert, and the evidence record. Replayable and explainable years later.</p>
-    </div>
-    <div class="sp a">
-      <h4>Agentic — one step</h4>
-      <p>Diagnosis. Correlating telemetry, logs, recent changes and topology into a hypothesis — and explaining it in language an on-call engineer can act on.</p>
-    </div>
-    <div class="sp h">
-      <h4>Human — the boundary</h4>
-      <p>All class 3 actions. Every escalation. Accepting anything the learning loop proposes into the spec. The spec is only ever changed by a person.</p>
-    </div>
-  </div>
-
-  <div class="sect grid g2">
-    <div class="box">
-      <b class="t">Composed from the same base agents</b>
-      <ul class="none">
-        <li><b>Sandbox Creator</b> (code · config · data) — the standing replica the fault is reproduced and the fix proven in</li>
-        <li><b>Reverse Engineer IaC</b> (CI/CD for code, platform, config) — rebuilds the sandbox, ships the fix through the project's own pipeline, and rolls it back</li>
-        <li><b>Regression Agent</b> (functional &amp; non-functional) — Test Harness Creator plus Data Expectation Service. <b>The same agent Ops Gate runs</b>, so a hotfix is held to the bar the release was accepted on</li>
-      </ul>
-      <p class="n" style="margin-top:7px"><b>Three agents, two capabilities.</b> Nothing here was built for self-healing — it was already built for the gate.</p>
-    </div>
-    <div class="box">
-      <b class="t">Guardrails that stop the healer</b>
-      <ul class="none">
-        <li><b>Rate limit</b> — max 3 actions per workload per 24h, then escalate</li>
-        <li><b>Repeat guard</b> — the same fix twice raises a defect instead of a third fix</li>
-        <li><b>Freeze windows</b> — observe only during change freeze or validation periods</li>
-        <li><b>Human incident open</b> — never act underneath someone who owns the problem</li>
-        <li><b>Blast radius</b> — beyond N downstream consumers, propose rather than act</li>
-        <li><b>Kill switch</b> — per workload, per domain, global</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="foot">
-    Every heal produces the same kind of evidence record as the gate itself.
-    <span>An automated change without an audit record is an audit finding. The record is the deliverable, not the fix.</span>
-  </div>
-</section>
-
-<section class="page">
-  <div class="ph">
-    <span class="k bk">Backup 1</span>
-    <h2>Worked incident — a data quality breach, end to end</h2>
-    <span class="s">Class 2 action · sandbox dry-run · validated · recorded</span>
-  </div>
-
-  <div class="trace">
-    <div class="tr">
-      <div class="tt">02:14:06</div>
-      <b>Detect — monitor FUN-03 breached</b>
-      <p>Day-2 monitor, deployed from the check that passed the gate. <code>pass_rate 96.1% &lt; 99.5%</code>. Same rule, same evaluator, same threshold as the gate used.</p>
-    </div>
-    <div class="tr agt">
-      <div class="tt">02:14:09</div>
-      <b>Diagnose — agent forms a hypothesis</b>
-      <p>Profiles the current batch against baseline, correlates with the upstream watermark and the last deployment. Finds <code>status</code> contains a value outside the accepted set, confined to one source partition, starting with a vendor release 40 minutes earlier. Confidence stated, evidence linked.</p>
-    </div>
-    <div class="tr">
-      <div class="tt">02:14:11</div>
-      <b>Decide — policy resolves the action class</b>
-      <p>Runbook for FUN-03 maps to <code>quarantine_bad_records</code>, <b>class 2</b>. Guardrails checked: no change freeze, no open human incident, 0 prior actions in window, 1.9% of rows affected — inside the 1% bound? <b>No.</b> Exceeds bounds → downgraded to <b>propose only</b>.</p>
-    </div>
-    <div class="tr">
-      <div class="tt">02:14:12</div>
-      <b>Remediate — bounded, so it stops</b>
-      <p>The agent does not act. It prepares the quarantine change, dry-runs it in a sandbox to show the resulting pass rate would be 99.8%, drafts the rollback, and pages the on-call engineer with all of it assembled.</p>
-    </div>
-    <div class="tr good">
-      <div class="tt">02:31:40</div>
-      <b>Human approves; agent executes and validates</b>
-      <p>Engineer approves the prepared change. Agent applies it, then <b>re-runs FUN-03</b>: <code>pass_rate 99.8%</code>. Passes. Had it failed, the change would have been reverted automatically and the incident escalated.</p>
-    </div>
-    <div class="tr">
-      <div class="tt">02:31:44</div>
-      <b>Record &amp; learn</b>
-      <p>Evidence record written: trigger, diagnosis, class, bound breach, dry-run result, approver, action, validation. Learning loop proposes a new check — <i>"accepted_values on <code>status</code> enforced at ingestion, not curation"</i> — targeted at <code>specs/base.yaml</code>. <b>A human decides whether it becomes part of the bar.</b></p>
-    </div>
-  </div>
-
-  <div class="foot">
-    The interesting moment is 02:14:11 — the agent had a correct diagnosis and a working fix, and still stopped.
-    <span>That is the design working. Bounds are not a limitation to apologise for; they are the reason this is deployable in a regulated estate.</span>
-  </div>
-</section>
-
-<section class="page">
-  <div class="ph">
-    <span class="k bk">Backup 2</span>
-    <h2>Failure modes of the healer itself</h2>
-    <span class="s">"What happens when the thing that fixes things is wrong?"</span>
-  </div>
-
-  <table>
-    <thead><tr><th style="width:24%">Failure mode</th><th style="width:38%">What it would cause</th><th>Control</th></tr></thead>
-    <tbody>
-      <tr>
-        <td><b>Wrong diagnosis</b></td>
-        <td>A correct-looking fix applied to the wrong cause</td>
-        <td>The agent never chooses the action — the runbook does, from the check that fired. Diagnosis informs the human-readable explanation, not the decision.</td>
-      </tr>
-      <tr>
-        <td><b>Flapping</b></td>
-        <td>Fix and break in a loop, burning the estate</td>
-        <td>Rate limit (3 per workload per 24h) and repeat guard (same action twice → stop and raise a defect).</td>
-      </tr>
-      <tr>
-        <td><b>Masking a real defect</b></td>
-        <td>The system looks healthy while a bug persists for months</td>
-        <td>Repeat-heal rate is reported as a <b>defect signal</b>, not an efficiency win. Two heals of the same fault open a defect automatically.</td>
-      </tr>
-      <tr>
-        <td><b>Remediation makes it worse</b></td>
-        <td>An outage caused by the recovery, not the fault</td>
-        <td>Class 2 dry-runs in a sandbox first; validation re-runs the failing check; failure triggers auto-revert and escalation.</td>
-      </tr>
-      <tr>
-        <td><b>Acting during a human incident</b></td>
-        <td>Two actors changing production simultaneously</td>
-        <td>Open human incident forces observe-only. The agent annotates and stands down.</td>
-      </tr>
-      <tr>
-        <td><b>Scope creep beyond the workload</b></td>
-        <td>A local fix with estate-wide consequences</td>
-        <td>Blast-radius check against the recovered topology; beyond N downstream consumers it proposes rather than acts.</td>
-      </tr>
-      <tr>
-        <td><b>The healer itself is down</b></td>
-        <td>Silent loss of monitoring — the worst case</td>
-        <td>Monitors fail closed and page a human. Absence of signal is treated as failure, exactly as at the gate.</td>
-      </tr>
-      <tr>
-        <td><b>Policy drift</b></td>
-        <td>Bounds quietly widened until the ladder means nothing</td>
-        <td>Policy is versioned code, reviewed like the spec. Every evidence record stamps the policy version it acted under.</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="foot">Every one of these is answered by a control that exists in the policy file, not by a promise.</div>
-</section>
-
-<section class="page">
-  <div class="ph">
-    <span class="k bk">Backup 3</span>
-    <h2>Measures and rollout</h2>
-    <span class="s">Earning the right to act, one class at a time</span>
+    <span class="k">Architecture</span>
+    <h2>Ops Self-Monitoring &amp; Self-Healing — High-Level Architecture</h2>
+    <span class="s">What happens after the gate &mdash; day 2 to day 1000</span>
   </div>
 
   <div class="sect">
-    <h3>Measures</h3>
-    <div class="grid g4">
-      <div class="kpi"><b>MTTD</b><span>Time to detect — should approach the monitor interval</span></div>
-      <div class="kpi"><b>MTTR</b><span>Time to restore, split by action class</span></div>
-      <div class="kpi"><b>Auto-revert rate</b><span>Remediations that failed validation — the honesty metric</span></div>
-      <div class="kpi"><b>Repeat-heal rate</b><span>Same fault healed again — should fall, not rise</span></div>
+    <div class="lane">
+      <div class="lh"><span>Steady state</span><em>the gate's own checks, still running</em></div>
+      <div class="entry">
+        <div class="st ok"><b>Ops Gate passed</b><small>evidence bundle signed</small></div>
+        <div class="ar">→</div>
+        <div class="st ok"><b>Day-2 monitors deployed</b><small>emitted from the passing checks — no second checklist</small></div>
+        <div class="ar">→</div>
+        <div class="st prod"><b>Production</b><small>continuously evaluated against the bar it was accepted on</small></div>
+      </div>
+    </div>
+
+    <div class="lane act">
+      <div class="lh"><span>When something breaks in production</span><em>reproduce → fix → prove → deploy → roll back if needed</em></div>
+
+      <div class="l7">
+        <div class="node det"><b>Detect</b><small>monitor breach or prod bug</small><span class="tagm">Rule</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Sandbox</b><small>code · config · data replica</small><span class="tagm">Built</span></div>
+        <div class="ar">→</div>
+        <div class="node agt"><b>Simulate &amp;<br>troubleshoot</b><small>reproduce, isolate the cause</small><span class="tagm">Agent</span></div>
+        <div class="ar">→</div>
+        <div class="node agt"><b>Fix</b><small>proposed change, class-bounded</small><span class="tagm">Agent</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Test</b><small>suites + data expectations</small><span class="tagm">Harness</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Deploy</b><small>the project's own CI/CD</small><span class="tagm amb">Class-gated</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Validate<br>or roll back</b><small>re-run the check that failed</small><span class="tagm">Rule</span></div>
+      </div>
+
+      <div class="branch">
+        <div class="out good">✓&nbsp; Check passes in production → resolved, recorded, back to steady state</div>
+        <div class="out bad">✗&nbsp; Check still fails → roll back through the same pipeline, escalate to a named human</div>
+      </div>
+
+      <div class="bandlbl">Base agents — the reusable foundation this loop is built from</div>
+      <div class="fan4">
+        <div class="vl"></div><div class="vl"></div><div class="vl"></div>
+      </div>
+      <div class="bgrid">
+        <div class="bcard">
+          <b>Sandbox Creator</b>
+          <em>code · config · data</em>
+          <div class="tags"><span class="tg">Sandbox</span><span class="tg">Simulate</span><span class="tg">Test</span></div>
+        </div>
+        <div class="bcard">
+          <b>Reverse Engineer IaC</b>
+          <em>CI/CD for code, platform, config</em>
+          <div class="tags"><span class="tg">Sandbox</span><span class="tg">Deploy</span><span class="tg">Roll back</span></div>
+        </div>
+        <div class="bcard wide">
+          <b>Regression Agent — functional &amp; non-functional <span class="reuse">the same agent Ops Gate runs</span></b>
+          <div class="subs">
+            <div class="sub"><b>Test Harness Creator</b><span>suites · coverage · regression</span></div>
+            <div class="sub"><b>Data Expectation Service</b><span>quality · profiling · reconciliation</span></div>
+          </div>
+          <div class="tags"><span class="tg">Detect</span><span class="tg">Test</span><span class="tg">Validate</span></div>
+        </div>
+      </div>
+
+      <div class="fan4" style="margin-top:9px">
+        <div class="vl"></div><div class="vl"></div><div class="vl"></div>
+      </div>
+      <div class="spine">
+        <b>Knowledge — Checklist &amp; Policy as Code</b>
+        <small>the same versioned spec the gate used · learning proposes changes, a human accepts them</small>
+      </div>
+
+      <div class="lgd">
+        The sandbox is standing and maintained, not built during an incident — reproduction is minutes, not hours.
+        &nbsp;·&nbsp; The regression agent that proves the fix is the same one that gated the release, so a fix cannot
+        pass a lower bar than the original deployment did.
+      </div>
     </div>
   </div>
 
-  <div class="sect grid g2">
-    <div class="box">
-      <b class="t">Rollout — authority is earned</b>
-      <ul class="none">
-        <li><b>1 · Observe</b> — class 0 only. The loop runs end to end and recommends; nothing acts. Compare its recommendation against what the engineer actually did.</li>
-        <li><b>2 · Shadow</b> — the agent prepares class 1 actions and a human clicks. Measures whether the recommendation was right before it is trusted.</li>
-        <li><b>3 · Class 1 automatic</b> — restarts, retries, scale-out. Reversible, no state change.</li>
-        <li><b>4 · Class 2 in bounds</b> — with sandbox dry-run and auto-revert, one workload at a time.</li>
-        <li><b>5 · Never class 3.</b> That is not a later phase. It is the design.</li>
-      </ul>
+  <div class="foot">
+    Assurance does not stop at go-live &mdash; the checks that let it in are the checks that keep watching.
+    <span>One artefact used three ways: the team&rsquo;s self-check, the gate, and day-2 monitoring and healing.</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="ph">
+    <span class="k">Architecture</span>
+    <h2>What the agent is permitted to do</h2>
+    <span class="s">The escalation ladder that makes automation safe in a regulated estate</span>
+  </div>
+
+  <div class="sect">
+    <h3>Action classes — what the agent is permitted to do</h3>
+    <div class="ladder">
+      <div class="rung r0">
+        <div class="cls">Class 0</div>
+        <div class="nm">Observe<small>No change is made</small></div>
+        <div class="who">Agent</div>
+        <div class="ex">Notify, annotate, raise a ticket. Used during change freeze and whenever a human already owns the incident.</div>
+      </div>
+      <div class="rung r1">
+        <div class="cls">Class 1</div>
+        <div class="nm">Reversible, no state change<small>Restores service without touching data or config</small></div>
+        <div class="who">Agent</div>
+        <div class="ex">Retry an idempotent run · restart a worker · scale out · fail over to a replica. Executes automatically, then validates.</div>
+      </div>
+      <div class="rung r2">
+        <div class="cls">Class 2</div>
+        <div class="nm">Reversible, touches data or config<small>Only within pre-declared bounds</small></div>
+        <div class="who">Agent in bounds</div>
+        <div class="ex">Reprocess a partition · quarantine bad records · revert config · resize a cluster. <b>Dry-run in a sandbox first</b>; auto-revert if validation fails.</div>
+      </div>
+      <div class="rung r3">
+        <div class="cls">Class 3</div>
+        <div class="nm">Irreversible or regulated<small>Schema, deletion, credentials, anything GxP-relevant</small></div>
+        <div class="who">Human only</div>
+        <div class="ex">The agent diagnoses, prepares the change, drafts the rollback plan and assembles the evidence. <b>A person executes it.</b> No exceptions, no override flag.</div>
+      </div>
     </div>
-    <div class="box">
-      <b class="t">Why this is the reusable pattern</b>
-      <ul class="none">
-        <li>No second checklist — monitors are generated from the gate that already exists</li>
-        <li>The action-class ladder is domain-agnostic; only the runbooks are domain-specific</li>
-        <li>Policy ships as versioned code, reviewable by security and enterprise architecture</li>
-        <li>The evidence record satisfies the audit question before it is asked</li>
-        <li>Ops Gate, Self-Monitoring and Self-Healing are <b>one artefact used three ways</b>, not three products</li>
-      </ul>
-    </div>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="box tint"><b class="t">The problem</b><p class="n">Assurance stops at go-live, monitoring is built separately from the readiness checks, and Ops carries well-understood toil at 3am.</p></div>
+    <div class="box tint"><b class="t">What we need</b><p class="n">Monitors that <b>are</b> the gate's checks, a standing sandbox to reproduce in, and an escalation ladder that makes automation safe in a regulated estate.</p></div>
+    <div class="box tint"><b class="t">The line we hold</b><p class="n">The agent proposes and proves a fix in the sandbox. Production is changed through the project's own pipeline, gated by action class — never around it.</p></div>
   </div>
 
   <div class="foot">
     The strongest thing we can say about this system is what it refuses to do.
-    <span>Class 3 is permanently out of reach of automation — and that is what makes classes 1 and 2 acceptable.</span>
+    <span>Class&nbsp;3 is permanently out of reach of automation &mdash; and that is what makes classes&nbsp;1 and&nbsp;2 acceptable.</span>
   </div>
 </section>
 </body>

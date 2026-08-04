@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ops Gate Agent — Requirement &amp; Design</title>
+<title>Ops Gate Agent — Detailed Design</title>
 <style>
   :root{
     --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
@@ -231,173 +231,10 @@
 </head>
 <body>
 
-<!-- ============ PAGE 1 — REQUIREMENT ============ -->
 <section class="page">
   <div class="ph">
-    <span class="k">Page 1</span>
-    <h2>Ops Gate Agent — Requirement</h2>
-    <span class="s">Assuring a project <em>before</em> Ops accepts it into production</span>
-  </div>
-
-  <div class="sect jn">
-
-    <div class="lane bad">
-      <div class="lh"><span>Today — without Ops Gate</span><em>weeks, and different every time</em></div>
-      <div class="rail">
-        <div class="pgroup">
-          <span class="pchip">Project A · dev</span>
-          <span class="pchip">Project B · dev</span>
-          <span class="pchip">Project C · dev</span>
-        </div>
-        <div class="ar">→</div>
-        <div class="st"><b>Its own handover pack</b><small>60 pages, a different shape per project</small></div>
-        <div class="ar">→</div>
-        <div class="st warn"><b>Ops reads it</b><small>one queue, one reviewer, judgement by eye</small></div>
-        <div class="ar">→</div>
-        <div class="st warn"><b>Gaps found at go-live</b><small>no alerts, config drift, missing DPIA</small></div>
-        <div class="ar">→</div>
-        <div class="st"><b>Production</b><small>Ops inherits a system it can't explain</small></div>
-      </div>
-      <div class="span"><span>↺ &nbsp;rework loop — back to the project team, repeated per project</span></div>
-    </div>
-
-    <div class="lane good">
-      <div class="lh"><span>With Ops Gate</span><em>hours, and identical every time</em></div>
-
-      <div class="wgrid">
-        <div class="pgroup">
-          <span class="pchip ok">Project A · dev</span>
-          <span class="pchip ok">Project B · dev</span>
-          <span class="pchip ok">Project C · dev</span>
-        </div>
-        <div class="ar">→</div>
-        <div class="st ok"><b>Self-check<br>during build</b><small>same spec, run by the team</small></div>
-        <div class="ar">→</div>
-        <div class="st gate"><b>OPS GATE</b><small>evidence bundle · deterministic verdict</small></div>
-        <div class="ar">→</div>
-        <div class="st sign"><b>Ops signs</b><small>evidence, not prose</small></div>
-        <div class="ar">→</div>
-        <div class="st prod"><b>Production<br>+ day-2 monitors</b><small>the same checks keep running</small></div>
-      </div>
-
-      <div class="drop">
-        <div></div><div></div>
-        <div class="vl dash" style="grid-column:3"></div>
-        <div class="vl" style="grid-column:5"></div>
-        <div class="vl dash" style="grid-column:9"></div>
-      </div>
-
-      <div class="spine">
-        <b>Knowledge — Checklist as Code</b>
-        <small>versioned · declarative · one source of truth for self-check, gate and day-2</small>
-      </div>
-
-      <div class="fan">
-        <div class="vl"></div>
-        <div class="vl"></div>
-      </div>
-
-      <div class="groups">
-        <div class="grp">
-          <div class="gh"><span>Functional</span><em>does it do the right thing?</em></div>
-          <div class="cards c3">
-            <div class="acard base"><b>Tests<br>&amp; Coverage</b><small>suites, critical path</small></div>
-            <div class="acard base"><b>Output<br>Quality</b><small>meets its declared expectation</small></div>
-            <div class="acard"><b>Contract<br>Conformance</b><small>schema, interface, semantics</small></div>
-          </div>
-        </div>
-        <div class="grp nf">
-          <div class="gh"><span>Non-functional</span><em>will it survive production, and is it accountable?</em></div>
-          <div class="cards c5">
-            <div class="acard"><b>Observability<br>&amp; SLO</b><small>alerts, failure points</small></div>
-            <div class="acard"><b>Cost<br>&amp; FinOps</b><small>budget, forecast</small></div>
-            <div class="acard base"><b>Config<br>&amp; Infra</b><small>drift, rollback</small></div>
-            <div class="acard"><b>Security<br>&amp; Access</b><small>secrets, least privilege</small></div>
-            <div class="acard"><b>Regulatory<br>&amp; Attestation</b><small>GxP, DPIA, owner</small></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="profiles">
-        <div class="plabel">Workload profiles</div>
-        <div class="pcard"><b>Data Engineering</b><small>quality, reconciliation, freshness</small></div>
-        <div class="pcard"><b>BI &amp; Analytics</b><small>metric accuracy, semantic model</small></div>
-        <div class="pcard"><b>ML Engineering</b><small>model eval, drift, feature parity</small></div>
-        <div class="pcard"><b>AI Engineering</b><small>answer eval, groundedness, safety</small></div>
-      </div>
-
-      <div class="lgd">Same check groups for every workload — only the profile's expectations differ. &nbsp;·&nbsp; Each group is an agent returning evidence, never a verdict. &nbsp;·&nbsp; <b>•</b> marks a reused base agent.</div>
-    </div>
-
-  </div>
-
-  <div class="sect">
-    <h3>Every check is categorised by how it is verified &nbsp;—&nbsp; nothing is silently skipped</h3>
-    <div class="grid g4">
-      <div class="cat ca">
-        <div class="h"><span class="l">A</span><b>Auto-verified</b></div>
-        <div class="c">
-          <div class="who">Machine reads it. Rule decides. No human.</div>
-          <ul>
-            <li>Test suite passing, coverage ≥ 80%</li>
-            <li>DQ pass rate, recon variance</li>
-            <li>Alerts on 100% of failure points</li>
-            <li>Zero secrets, zero config drift</li>
-            <li>Rollback executed in a sandbox</li>
-          </ul>
-        </div>
-      </div>
-      <div class="cat cb">
-        <div class="h"><span class="l">B</span><b>Auto-assembled</b></div>
-        <div class="c">
-          <div class="who">Agent extracts &amp; summarises. Ops judges.</div>
-          <ul>
-            <li>Is the SLO realistic for this design?</li>
-            <li>Failure modes in the topology but missing from the docs</li>
-            <li>Runbook completeness</li>
-            <li>Fit against the reference architecture</li>
-          </ul>
-        </div>
-      </div>
-      <div class="cat cc">
-        <div class="h"><span class="l">C</span><b>Attested</b></div>
-        <div class="c">
-          <div class="who">Cannot be automated. Named person signs, dated.</div>
-          <ul>
-            <li>GxP impact assessment</li>
-            <li>DPIA / privacy approval</li>
-            <li>Business acceptance</li>
-            <li>Production owner &amp; on-call rota</li>
-            <li>Vendor / contractual dependency</li>
-          </ul>
-        </div>
-      </div>
-      <div class="cat cd">
-        <div class="h"><span class="l">D</span><b>Waived</b></div>
-        <div class="c">
-          <div class="who">Explicitly not applicable — never blank.</div>
-          <ul>
-            <li>Requires a reason and an approver</li>
-            <li>Carries an expiry date</li>
-            <li>Appears in the evidence bundle</li>
-            <li>Re-tested at the next release</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="foot">
-    The maturity measure is the share of checks in Category A — and it rises release on release.
-    <span>Manual work isn't eliminated by pretending it's automated. It's declared, owned, dated and made visible.</span>
-  </div>
-</section>
-
-<!-- ============ PAGE 2 — DESIGN ============ -->
-<section class="page">
-  <div class="ph">
-    <span class="k">Page 2</span>
-    <h2>Ops Gate Agent — Architecture &amp; Design</h2>
+    <span class="k bk">Design</span>
+    <h2>Ops Gate Agent — Detailed Design</h2>
     <span class="s">Deterministic gate · agentic comprehension · human signature</span>
   </div>
 
@@ -470,7 +307,6 @@
   </div>
 </section>
 
-<!-- ============ BACKUP 1 — CHECKLIST ============ -->
 <section class="page">
   <div class="ph">
     <span class="k bk">Backup 1</span>
@@ -507,7 +343,6 @@
   </div>
 </section>
 
-<!-- ============ BACKUP 2 — CHECK AS CODE ============ -->
 <section class="page">
   <div class="ph">
     <span class="k bk">Backup 2</span>
@@ -572,7 +407,6 @@
   </div>
 </section>
 
-<!-- ============ BACKUP 3 — MANUAL & DEPLOYMENT ============ -->
 <section class="page">
   <div class="ph">
     <span class="k bk">Backup 3</span>
@@ -626,7 +460,6 @@
   <div class="foot">Automating the assessment does not mean automating the accountability.</div>
 </section>
 
-<!-- ============ BACKUP 4 — VALUE ============ -->
 <section class="page">
   <div class="ph">
     <span class="k bk">Backup 4</span>
@@ -668,6 +501,5 @@
 
   <div class="foot">One spec. Codified once, enforced everywhere, and it keeps working after go-live.</div>
 </section>
-
 </body>
 </html>
