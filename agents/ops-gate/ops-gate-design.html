@@ -70,6 +70,42 @@
   .ca .h{background:var(--teal)} .cb .h{background:var(--agent)}
   .cc .h{background:var(--amber)} .cd .h{background:var(--mute)}
 
+  /* before / after journey */
+  .jn{display:flex;flex-direction:column;gap:11px}
+  .lane{border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .lane .lh{
+    padding:6px 13px;font-size:10.5px;font-weight:800;letter-spacing:.11em;
+    text-transform:uppercase;color:#fff;display:flex;justify-content:space-between
+  }
+  .lane .lh em{font-style:normal;font-weight:700;letter-spacing:.02em;text-transform:none;opacity:.92}
+  .lane.bad .lh{background:var(--red)}
+  .lane.good .lh{background:var(--teal)}
+  .rail{display:flex;align-items:stretch;padding:11px 12px 4px}
+  .pgroup{flex:none;display:flex;flex-direction:column;gap:4px;justify-content:center;padding-right:2px}
+  .pchip{
+    font-size:11px;font-weight:700;border:1px solid var(--line);border-radius:6px;
+    padding:3px 9px;background:#fff;color:#33445A;white-space:nowrap
+  }
+  .pchip.ok{background:#F1F8F6;border-color:#BFDED6;color:#0B5F53}
+  .st{
+    flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#fff;
+    text-align:center;display:flex;flex-direction:column;justify-content:center
+  }
+  .st b{font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  .st small{display:block;margin-top:2px;font-size:10.5px;line-height:1.35;color:var(--mute)}
+  .st.warn{background:#FCF3F2;border-color:#E8C4C0} .st.warn b{color:var(--red)}
+  .st.ok{background:#F1F8F6;border-color:#BFDED6} .st.ok b{color:var(--teal)}
+  .st.sign{background:#FBF5E9;border-color:#E4CE9E} .st.sign b{color:var(--amber)}
+  .st.prod{background:#EEF3FA;border-color:#B9CDE8}
+  .ar{display:grid;place-items:center;color:#9AA8B8;font-size:14px;padding:0 6px;flex:none}
+  .span{margin:9px 12px 11px;border-top:2px dashed var(--red);text-align:center}
+  .span span{
+    display:inline-block;transform:translateY(-9px);background:#fff;padding:0 10px;
+    font-size:11px;font-weight:800;color:var(--red)
+  }
+  .span.good{border-top:2px solid var(--teal)}
+  .span.good span{color:var(--teal)}
+
   /* flow */
   .flow{display:flex;align-items:stretch;gap:0;margin:4px 0 2px}
   .fs{
@@ -151,72 +187,57 @@
     <span class="s">Assuring a project <em>before</em> Ops accepts it into production</span>
   </div>
 
-  <div class="sect grid g2">
-    <div class="box prob">
-      <b class="t">The problem today</b>
-      <ul class="tight">
-        <li>Readiness lives in <b>large documents</b> — reviewed by reading, not by running.</li>
-        <li>Evidence is scattered across tickets, decks, screenshots and email.</li>
-        <li>Gaps surface <b>at go-live</b>, when rework is most expensive.</li>
-        <li>Every engagement invents its own bar — nothing carries forward.</li>
-        <li>Ops inherits a system it cannot explain, monitor or recover.</li>
-      </ul>
+  <div class="sect jn">
+
+    <div class="lane bad">
+      <div class="lh"><span>Today — without Ops Gate</span><em>weeks, and different every time</em></div>
+      <div class="rail">
+        <div class="pgroup">
+          <span class="pchip">Project A · dev</span>
+          <span class="pchip">Project B · dev</span>
+          <span class="pchip">Project C · dev</span>
+        </div>
+        <div class="ar">→</div>
+        <div class="st"><b>Its own handover pack</b><small>60 pages, a different shape per project</small></div>
+        <div class="ar">→</div>
+        <div class="st warn"><b>Ops reads it</b><small>one queue, one reviewer, judgement by eye</small></div>
+        <div class="ar">→</div>
+        <div class="st warn"><b>Gaps found at go-live</b><small>no alerts, config drift, missing DPIA</small></div>
+        <div class="ar">→</div>
+        <div class="st"><b>Production</b><small>Ops inherits a system it can't explain</small></div>
+      </div>
+      <div class="span"><span>↺ &nbsp;rework loop — back to the project team, repeated per project</span></div>
     </div>
-    <div class="box prom">
-      <b class="t">What we need instead</b>
-      <ul class="tight">
-        <li>The handover artefact is <b>executable, not a document</b>.</li>
-        <li>The project team runs the <b>identical gate</b> before requesting handover — no surprises at the door.</li>
-        <li>Every check carries <b>machine-readable evidence</b> or a named attestation.</li>
-        <li>Passing checks <b>become the day-2 monitors</b> — assurance doesn't stop at go-live.</li>
-        <li>One versioned bar, reused by every engagement.</li>
-      </ul>
+
+    <div class="lane good">
+      <div class="lh"><span>With Ops Gate</span><em>hours, and identical every time</em></div>
+      <div class="rail">
+        <div class="pgroup">
+          <span class="pchip ok">Project A · dev ✓</span>
+          <span class="pchip ok">Project B · dev ✓</span>
+          <span class="pchip ok">Project C · dev ✓</span>
+        </div>
+        <div class="ar">→</div>
+        <div class="st ok"><b>Self-check during build</b><small>same spec, run by the team, fails early</small></div>
+        <div class="ar">→</div>
+        <div class="st ok"><b>Gate evaluates</b><small>evidence bundle, deterministic verdict</small></div>
+        <div class="ar">→</div>
+        <div class="st sign"><b>Ops signs</b><small>reviews evidence, not prose</small></div>
+        <div class="ar">→</div>
+        <div class="st prod"><b>Production<br>+ day-2 monitors</b><small>the same checks keep running</small></div>
+      </div>
+      <div class="span good"><span>one versioned spec — used at all three points, reused by every project</span></div>
     </div>
+
   </div>
 
   <div class="sect">
     <h3>What must be assured</h3>
     <div class="grid g4">
-      <div class="box tint">
-        <b class="t">Functional</b>
-        <p class="n">Does it do the right thing?</p>
-        <ul class="tight" style="margin-top:6px">
-          <li>Test harness results</li>
-          <li>Data quality expectations</li>
-          <li>Profiling &amp; reconciliation</li>
-          <li>Critical-path coverage</li>
-        </ul>
-      </div>
-      <div class="box tint">
-        <b class="t">Non-functional</b>
-        <p class="n">Will it survive production?</p>
-        <ul class="tight" style="margin-top:6px">
-          <li>SLA / SLO and alerting</li>
-          <li>Failure points &amp; blast radius</li>
-          <li>Cost budget and forecast</li>
-          <li>Rollback demonstrated</li>
-        </ul>
-      </div>
-      <div class="box tint">
-        <b class="t">Config &amp; Security</b>
-        <p class="n">Is it reproducible and safe?</p>
-        <ul class="tight" style="margin-top:6px">
-          <li>Config externalised, zero drift</li>
-          <li>No hardcoded secrets</li>
-          <li>Least-privilege access</li>
-          <li>Sensitive data classified</li>
-        </ul>
-      </div>
-      <div class="box tint">
-        <b class="t">Regulatory &amp; Org</b>
-        <p class="n">Is it accountable?</p>
-        <ul class="tight" style="margin-top:6px">
-          <li>GxP impact assessment</li>
-          <li>DPIA / privacy approval</li>
-          <li>Named production owner</li>
-          <li>On-call rota in place</li>
-        </ul>
-      </div>
+      <div class="box tint"><b class="t">Functional</b><p class="n">Tests, data quality, profiling, reconciliation</p></div>
+      <div class="box tint"><b class="t">Non-functional</b><p class="n">SLO, alerts, failure points, cost, rollback</p></div>
+      <div class="box tint"><b class="t">Config &amp; Security</b><p class="n">Zero drift, no secrets, least privilege, masking</p></div>
+      <div class="box tint"><b class="t">Regulatory &amp; Org</b><p class="n">GxP, DPIA, named owner, on-call rota</p></div>
     </div>
   </div>
 
