@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ops Self-Monitoring &amp; Self-Healing — Requirement &amp; Design</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12);
+  }
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:18px}
+  .ph .k{
+    font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none
+  }
+  .ph .k.bk{background:var(--mute)}
+  .ph h2{margin:0;font-size:clamp(19px,2.1vw,26px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+
+  h3{margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+  .sect{margin-bottom:17px}
+
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px} ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0} ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+
+  /* ---- loop diagram ---- */
+  .lane{border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-bottom:11px}
+  .lane .lh{
+    padding:6px 13px;font-size:10.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;
+    color:#fff;display:flex;justify-content:space-between;background:var(--teal)
+  }
+  .lane.act .lh{background:var(--navy)}
+  .lane .lh em{font-style:normal;font-weight:700;letter-spacing:.02em;text-transform:none;opacity:.92}
+
+  .entry{display:flex;align-items:stretch;padding:11px 12px}
+  .st{
+    flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;
+    text-align:center;display:flex;flex-direction:column;justify-content:center
+  }
+  .st b{font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  .st small{display:block;margin-top:2px;font-size:10.5px;line-height:1.35;color:var(--mute)}
+  .st.ok{background:#F1F8F6;border-color:#BFDED6} .st.ok b{color:var(--teal)}
+  .st.prod{background:#EEF3FA;border-color:#B9CDE8}
+  .ar{display:grid;place-items:center;color:#9AA8B8;font-size:14px;padding:0 7px;flex:none}
+
+  .lgrid{display:grid;grid-template-columns:1fr 18px 1fr 18px 1fr 18px 1fr 18px 1fr;padding:11px 12px 0}
+  .node{border-radius:8px;padding:9px 8px;text-align:center;border:1px solid var(--line);background:#fff}
+  .node b{display:block;font-size:12.5px;font-weight:800;letter-spacing:.01em}
+  .node small{display:block;margin-top:2px;font-size:10px;line-height:1.35;color:var(--mute)}
+  .node .tagm{
+    display:inline-block;margin-top:5px;font-size:9px;font-weight:800;letter-spacing:.08em;
+    text-transform:uppercase;border-radius:4px;padding:1px 6px;color:#fff
+  }
+  .node.det{background:#EEF3FA;border-color:#B9CDE8} .node.det b{color:var(--navy)} .node.det .tagm{background:var(--navy)}
+  .node.agt{background:#F4EFFB;border-color:#DDCCF0} .node.agt b{color:var(--agent)} .node.agt .tagm{background:var(--agent)}
+
+  .branch{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:11px 12px 0}
+  .out{border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:9px}
+  .out.good{background:#F1F8F6;border:1px solid #BFDED6;color:#0B5F53}
+  .out.bad{background:#FCF3F2;border:1px solid #E8C4C0;color:var(--red)}
+
+  .drop{display:grid;grid-template-columns:1fr 18px 1fr 18px 1fr 18px 1fr 18px 1fr;height:14px;padding:0 12px;margin-top:11px}
+  .vl{width:0;justify-self:center;border-left:2px solid var(--teal);height:100%}
+  .vl.dash{border-left-style:dashed;border-left-color:#9FC4BB}
+  .spine{
+    margin:0 12px;border:1px solid var(--teal);background:#E9F4F1;border-radius:9px;
+    padding:8px 13px;display:flex;align-items:center;justify-content:center;gap:12px;text-align:center
+  }
+  .spine b{font-size:13.5px;font-weight:800;color:#0B5F53;letter-spacing:-.01em}
+  .spine small{font-size:11px;color:#3F7A6F;font-weight:600}
+  .lgd{padding:9px 12px 11px;font-size:10.5px;color:var(--mute);font-weight:600;text-align:center}
+
+  /* ---- action class ladder ---- */
+  .ladder{display:flex;flex-direction:column;gap:7px}
+  .rung{display:grid;grid-template-columns:64px 1fr 128px 1fr;gap:11px;align-items:center;
+    border:1px solid var(--line);border-left-width:5px;border-radius:9px;padding:9px 12px}
+  .rung .cls{font-size:12px;font-weight:800;letter-spacing:.02em}
+  .rung .nm{font-size:13.5px;font-weight:800;letter-spacing:-.01em}
+  .rung .nm small{display:block;font-weight:600;font-size:11.5px;color:var(--mute);margin-top:1px}
+  .rung .who{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;text-align:center;
+    border-radius:5px;padding:4px 6px;color:#fff}
+  .rung .ex{font-size:11.5px;color:var(--mute);line-height:1.45}
+  .r0{border-left-color:#5C6B7F} .r0 .cls,.r0 .nm{color:#5C6B7F} .r0 .who{background:#5C6B7F}
+  .r1{border-left-color:var(--teal)} .r1 .cls,.r1 .nm{color:var(--teal)} .r1 .who{background:var(--teal)}
+  .r2{border-left-color:var(--amber)} .r2 .cls,.r2 .nm{color:var(--amber)} .r2 .who{background:var(--amber)}
+  .r3{border-left-color:var(--red)} .r3 .cls,.r3 .nm{color:var(--red)} .r3 .who{background:var(--red)}
+
+  /* ---- split ---- */
+  .sp{border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+  .sp h4{margin:0 0 6px;font-size:13.5px;font-weight:800}
+  .sp p{margin:0;font-size:12.5px;line-height:1.55;color:#44536A}
+  .sp.d{background:#EEF3FA;border-color:#C6D6EC} .sp.d h4{color:var(--navy)}
+  .sp.a{background:#F4EFFB;border-color:#DDCCF0} .sp.a h4{color:var(--agent)}
+  .sp.h{background:#FBF5E9;border-color:#E4CE9E} .sp.h h4{color:var(--amber)}
+
+  /* ---- trace ---- */
+  .trace{border-left:2px solid var(--line);margin-left:8px;padding-left:0}
+  .tr{position:relative;padding:0 0 13px 22px}
+  .tr::before{
+    content:"";position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:50%;
+    background:#fff;border:2px solid var(--navy)
+  }
+  .tr.agt::before{border-color:var(--agent)} .tr.good::before{border-color:var(--teal);background:var(--teal)}
+  .tr .tt{font-size:11px;font-weight:800;color:var(--mute);font-family:ui-monospace,Menlo,monospace}
+  .tr b{display:block;font-size:13px;font-weight:800;margin-top:1px}
+  .tr p{margin:2px 0 0;font-size:12.5px;line-height:1.5;color:#44536A}
+  .tr code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--panel);
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:7px 9px;background:var(--navy);color:#fff;font-size:10.5px;
+    font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+  td{padding:7px 9px;border-bottom:1px solid var(--line);color:#33445A;vertical-align:top}
+  tr:nth-child(even) td{background:#FAFCFD}
+
+  .kpi{text-align:center;border:1px solid var(--line);border-radius:10px;padding:13px 10px;background:var(--panel)}
+  .kpi b{display:block;font-size:21px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+  .kpi span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute);font-weight:600}
+
+  .foot{margin-top:16px;border-top:2px solid var(--navy);padding-top:11px;
+    font-size:13.5px;font-weight:800;color:var(--navy);text-align:center}
+  .foot span{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--mute)}
+
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Page 1</span>
+    <h2>Ops Self-Monitoring &amp; Self-Healing — Requirement</h2>
+    <span class="s">What happens after the gate — day 2 to day 1000</span>
+  </div>
+
+  <div class="sect">
+    <div class="lane">
+      <div class="lh"><span>Steady state</span><em>the gate's own checks, still running</em></div>
+      <div class="entry">
+        <div class="st ok"><b>Ops Gate passed</b><small>evidence bundle signed</small></div>
+        <div class="ar">→</div>
+        <div class="st ok"><b>Day-2 monitors deployed</b><small>emitted from the passing checks — no second checklist</small></div>
+        <div class="ar">→</div>
+        <div class="st prod"><b>Production</b><small>continuously evaluated against the bar it was accepted on</small></div>
+      </div>
+    </div>
+
+    <div class="lane act">
+      <div class="lh"><span>When a monitor breaches</span><em>one agentic step in an otherwise deterministic loop</em></div>
+
+      <div class="lgrid">
+        <div class="node det"><b>Detect</b><small>the same rule that gated it</small><span class="tagm">Rule</span></div>
+        <div class="ar">→</div>
+        <div class="node agt"><b>Diagnose</b><small>correlate signals, form a hypothesis</small><span class="tagm">Agent</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Decide</b><small>action class → who may act</small><span class="tagm">Policy</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Remediate</b><small>a known runbook action, bounded</small><span class="tagm">Runbook</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Validate</b><small>re-run the check that failed</small><span class="tagm">Rule</span></div>
+      </div>
+
+      <div class="branch">
+        <div class="out good">✓&nbsp; Check passes → resolved, recorded, back to steady state</div>
+        <div class="out bad">✗&nbsp; Check still fails → auto-revert, escalate to a named human</div>
+      </div>
+
+      <div class="drop">
+        <div class="vl" style="grid-column:1"></div>
+        <div class="vl dash" style="grid-column:5"></div>
+        <div class="vl" style="grid-column:9"></div>
+      </div>
+
+      <div class="spine">
+        <b>Knowledge — Checklist as Code</b>
+        <small>the same versioned spec the gate used · learning proposes changes, a human accepts them</small>
+      </div>
+
+      <div class="lgd">
+        Detection and validation read the spec. Remediation is bounded by policy declared in the spec.
+        Nothing in this loop invents a rule at runtime.
+      </div>
+    </div>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="box tint">
+      <b class="t">The problem</b>
+      <ul class="tight">
+        <li>Assurance stops at go-live; the system drifts away from the bar it was accepted on.</li>
+        <li>Monitoring is built separately from the readiness checks — so the two disagree.</li>
+        <li>Ops carries repetitive, well-understood toil at 3am.</li>
+      </ul>
+    </div>
+    <div class="box tint">
+      <b class="t">What we need</b>
+      <ul class="tight">
+        <li>Monitors that <b>are</b> the gate's checks, not a re-interpretation of them.</li>
+        <li>Automatic recovery for the boring, reversible failures — with proof it worked.</li>
+        <li>An escalation ladder that makes automation safe in a regulated estate.</li>
+      </ul>
+    </div>
+    <div class="box tint">
+      <b class="t">The line we hold</b>
+      <ul class="tight">
+        <li>The agent may <b>restore a known good state</b>. It may not invent a new one.</li>
+        <li>Every action is validated by re-running the check, or it is reverted.</li>
+        <li>Healing the same fault twice is a <b>defect signal</b>, not a success.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    Self-healing is not the goal. Fewer incidents is the goal.
+    <span>A rising auto-heal count on the same check means we are masking a defect, and the system is built to say so.</span>
+  </div>
+</section>
+
+<!-- ============ PAGE 2 ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Page 2</span>
+    <h2>Architecture &amp; Design</h2>
+    <span class="s">Bounded authority · mandatory validation · complete evidence</span>
+  </div>
+
+  <div class="sect">
+    <h3>Action classes — what the agent is permitted to do</h3>
+    <div class="ladder">
+      <div class="rung r0">
+        <div class="cls">Class 0</div>
+        <div class="nm">Observe<small>No change is made</small></div>
+        <div class="who">Agent</div>
+        <div class="ex">Notify, annotate, raise a ticket. Used during change freeze and whenever a human already owns the incident.</div>
+      </div>
+      <div class="rung r1">
+        <div class="cls">Class 1</div>
+        <div class="nm">Reversible, no state change<small>Restores service without touching data or config</small></div>
+        <div class="who">Agent</div>
+        <div class="ex">Retry an idempotent run · restart a worker · scale out · fail over to a replica. Executes automatically, then validates.</div>
+      </div>
+      <div class="rung r2">
+        <div class="cls">Class 2</div>
+        <div class="nm">Reversible, touches data or config<small>Only within pre-declared bounds</small></div>
+        <div class="who">Agent in bounds</div>
+        <div class="ex">Reprocess a partition · quarantine bad records · revert config · resize a cluster. <b>Dry-run in a sandbox first</b>; auto-revert if validation fails.</div>
+      </div>
+      <div class="rung r3">
+        <div class="cls">Class 3</div>
+        <div class="nm">Irreversible or regulated<small>Schema, deletion, credentials, anything GxP-relevant</small></div>
+        <div class="who">Human only</div>
+        <div class="ex">The agent diagnoses, prepares the change, drafts the rollback plan and assembles the evidence. <b>A person executes it.</b> No exceptions, no override flag.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="sp d">
+      <h4>Deterministic — most of the loop</h4>
+      <p>Detection, the action-class decision, the runbook action itself, validation, revert, and the evidence record. Replayable and explainable years later.</p>
+    </div>
+    <div class="sp a">
+      <h4>Agentic — one step</h4>
+      <p>Diagnosis. Correlating telemetry, logs, recent changes and topology into a hypothesis — and explaining it in language an on-call engineer can act on.</p>
+    </div>
+    <div class="sp h">
+      <h4>Human — the boundary</h4>
+      <p>All class 3 actions. Every escalation. Accepting anything the learning loop proposes into the spec. The spec is only ever changed by a person.</p>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Composed from the same base agents</b>
+      <ul class="none">
+        <li><b>Sandbox Creator</b> — dry-runs a class 2 remediation before it touches production</li>
+        <li><b>Reverse Engineer IaC</b> — supplies topology for blast-radius checks, and detects the drift that triggers CFG monitors</li>
+        <li><b>Data Expectation Services</b> — the DQ monitors, and the quarantine logic behind them</li>
+        <li><b>Test Framework</b> — re-runs the relevant suite as post-remediation validation</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Guardrails that stop the healer</b>
+      <ul class="none">
+        <li><b>Rate limit</b> — max 3 actions per workload per 24h, then escalate</li>
+        <li><b>Repeat guard</b> — the same fix twice raises a defect instead of a third fix</li>
+        <li><b>Freeze windows</b> — observe only during change freeze or validation periods</li>
+        <li><b>Human incident open</b> — never act underneath someone who owns the problem</li>
+        <li><b>Blast radius</b> — beyond N downstream consumers, propose rather than act</li>
+        <li><b>Kill switch</b> — per workload, per domain, global</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    Every heal produces the same kind of evidence record as the gate itself.
+    <span>An automated change without an audit record is an audit finding. The record is the deliverable, not the fix.</span>
+  </div>
+</section>
+
+<!-- ============ BACKUP 1 ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup 1</span>
+    <h2>Worked incident — a data quality breach, end to end</h2>
+    <span class="s">Class 2 action · sandbox dry-run · validated · recorded</span>
+  </div>
+
+  <div class="trace">
+    <div class="tr">
+      <div class="tt">02:14:06</div>
+      <b>Detect — monitor FUN-03 breached</b>
+      <p>Day-2 monitor, deployed from the check that passed the gate. <code>pass_rate 96.1% &lt; 99.5%</code>. Same rule, same evaluator, same threshold as the gate used.</p>
+    </div>
+    <div class="tr agt">
+      <div class="tt">02:14:09</div>
+      <b>Diagnose — agent forms a hypothesis</b>
+      <p>Profiles the current batch against baseline, correlates with the upstream watermark and the last deployment. Finds <code>status</code> contains a value outside the accepted set, confined to one source partition, starting with a vendor release 40 minutes earlier. Confidence stated, evidence linked.</p>
+    </div>
+    <div class="tr">
+      <div class="tt">02:14:11</div>
+      <b>Decide — policy resolves the action class</b>
+      <p>Runbook for FUN-03 maps to <code>quarantine_bad_records</code>, <b>class 2</b>. Guardrails checked: no change freeze, no open human incident, 0 prior actions in window, 1.9% of rows affected — inside the 1% bound? <b>No.</b> Exceeds bounds → downgraded to <b>propose only</b>.</p>
+    </div>
+    <div class="tr">
+      <div class="tt">02:14:12</div>
+      <b>Remediate — bounded, so it stops</b>
+      <p>The agent does not act. It prepares the quarantine change, dry-runs it in a sandbox to show the resulting pass rate would be 99.8%, drafts the rollback, and pages the on-call engineer with all of it assembled.</p>
+    </div>
+    <div class="tr good">
+      <div class="tt">02:31:40</div>
+      <b>Human approves; agent executes and validates</b>
+      <p>Engineer approves the prepared change. Agent applies it, then <b>re-runs FUN-03</b>: <code>pass_rate 99.8%</code>. Passes. Had it failed, the change would have been reverted automatically and the incident escalated.</p>
+    </div>
+    <div class="tr">
+      <div class="tt">02:31:44</div>
+      <b>Record &amp; learn</b>
+      <p>Evidence record written: trigger, diagnosis, class, bound breach, dry-run result, approver, action, validation. Learning loop proposes a new check — <i>"accepted_values on <code>status</code> enforced at ingestion, not curation"</i> — targeted at <code>specs/base.yaml</code>. <b>A human decides whether it becomes part of the bar.</b></p>
+    </div>
+  </div>
+
+  <div class="foot">
+    The interesting moment is 02:14:11 — the agent had a correct diagnosis and a working fix, and still stopped.
+    <span>That is the design working. Bounds are not a limitation to apologise for; they are the reason this is deployable in a regulated estate.</span>
+  </div>
+</section>
+
+<!-- ============ BACKUP 2 ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup 2</span>
+    <h2>Failure modes of the healer itself</h2>
+    <span class="s">"What happens when the thing that fixes things is wrong?"</span>
+  </div>
+
+  <table>
+    <thead><tr><th style="width:24%">Failure mode</th><th style="width:38%">What it would cause</th><th>Control</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><b>Wrong diagnosis</b></td>
+        <td>A correct-looking fix applied to the wrong cause</td>
+        <td>The agent never chooses the action — the runbook does, from the check that fired. Diagnosis informs the human-readable explanation, not the decision.</td>
+      </tr>
+      <tr>
+        <td><b>Flapping</b></td>
+        <td>Fix and break in a loop, burning the estate</td>
+        <td>Rate limit (3 per workload per 24h) and repeat guard (same action twice → stop and raise a defect).</td>
+      </tr>
+      <tr>
+        <td><b>Masking a real defect</b></td>
+        <td>The system looks healthy while a bug persists for months</td>
+        <td>Repeat-heal rate is reported as a <b>defect signal</b>, not an efficiency win. Two heals of the same fault open a defect automatically.</td>
+      </tr>
+      <tr>
+        <td><b>Remediation makes it worse</b></td>
+        <td>An outage caused by the recovery, not the fault</td>
+        <td>Class 2 dry-runs in a sandbox first; validation re-runs the failing check; failure triggers auto-revert and escalation.</td>
+      </tr>
+      <tr>
+        <td><b>Acting during a human incident</b></td>
+        <td>Two actors changing production simultaneously</td>
+        <td>Open human incident forces observe-only. The agent annotates and stands down.</td>
+      </tr>
+      <tr>
+        <td><b>Scope creep beyond the workload</b></td>
+        <td>A local fix with estate-wide consequences</td>
+        <td>Blast-radius check against the recovered topology; beyond N downstream consumers it proposes rather than acts.</td>
+      </tr>
+      <tr>
+        <td><b>The healer itself is down</b></td>
+        <td>Silent loss of monitoring — the worst case</td>
+        <td>Monitors fail closed and page a human. Absence of signal is treated as failure, exactly as at the gate.</td>
+      </tr>
+      <tr>
+        <td><b>Policy drift</b></td>
+        <td>Bounds quietly widened until the ladder means nothing</td>
+        <td>Policy is versioned code, reviewed like the spec. Every evidence record stamps the policy version it acted under.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="foot">Every one of these is answered by a control that exists in the policy file, not by a promise.</div>
+</section>
+
+<!-- ============ BACKUP 3 ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup 3</span>
+    <h2>Measures and rollout</h2>
+    <span class="s">Earning the right to act, one class at a time</span>
+  </div>
+
+  <div class="sect">
+    <h3>Measures</h3>
+    <div class="grid g4">
+      <div class="kpi"><b>MTTD</b><span>Time to detect — should approach the monitor interval</span></div>
+      <div class="kpi"><b>MTTR</b><span>Time to restore, split by action class</span></div>
+      <div class="kpi"><b>Auto-revert rate</b><span>Remediations that failed validation — the honesty metric</span></div>
+      <div class="kpi"><b>Repeat-heal rate</b><span>Same fault healed again — should fall, not rise</span></div>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Rollout — authority is earned</b>
+      <ul class="none">
+        <li><b>1 · Observe</b> — class 0 only. The loop runs end to end and recommends; nothing acts. Compare its recommendation against what the engineer actually did.</li>
+        <li><b>2 · Shadow</b> — the agent prepares class 1 actions and a human clicks. Measures whether the recommendation was right before it is trusted.</li>
+        <li><b>3 · Class 1 automatic</b> — restarts, retries, scale-out. Reversible, no state change.</li>
+        <li><b>4 · Class 2 in bounds</b> — with sandbox dry-run and auto-revert, one workload at a time.</li>
+        <li><b>5 · Never class 3.</b> That is not a later phase. It is the design.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Why this is the reusable pattern</b>
+      <ul class="none">
+        <li>No second checklist — monitors are generated from the gate that already exists</li>
+        <li>The action-class ladder is domain-agnostic; only the runbooks are domain-specific</li>
+        <li>Policy ships as versioned code, reviewable by security and enterprise architecture</li>
+        <li>The evidence record satisfies the audit question before it is asked</li>
+        <li>Ops Gate, Self-Monitoring and Self-Healing are <b>one artefact used three ways</b>, not three products</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    The strongest thing we can say about this system is what it refuses to do.
+    <span>Class 3 is permanently out of reach of automation — and that is what makes classes 1 and 2 acceptable.</span>
+  </div>
+</section>
+
+</body>
+</html>

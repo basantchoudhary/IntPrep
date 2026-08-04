@@ -1,0 +1,164 @@
+# Ops Self-Healing — remediation policy (extract)
+#
+# The monitors are not defined here. They are the checks that passed the gate,
+# emitted as `day2-monitors.json`. This file only declares what may be DONE when
+# one of them breaches — and by whom.
+#
+# Nothing in this file grants an agent the right to decide. It grants bounded
+# permission to execute a known action and prove it worked.
+
+policy_version: 1.2.0
+domain: data-and-ai-platform
+owner: eai-ops
+
+# --------------------------------------------------------------------------- #
+# Action classes — the escalation ladder
+# --------------------------------------------------------------------------- #
+action_classes:
+
+  - class: 0
+    name: Observe
+    description: No change is made. The system notifies and records.
+    authority: agent
+    reversible: n/a
+    examples: [notify, annotate_dashboard, open_ticket]
+
+  - class: 1
+    name: Reversible, no state change
+    description: Restores service without touching data or configuration.
+    authority: agent            # executes automatically
+    reversible: immediately
+    requires: [validation, evidence_record]
+    examples: [retry_idempotent_run, restart_worker, scale_out, clear_cache, failover_replica]
+
+  - class: 2
+    name: Reversible, touches data or config
+    description: >
+      Changes data or configuration within pre-declared bounds. Dry-run in a
+      sandbox first; apply only if the dry-run validates.
+    authority: agent_within_bounds
+    reversible: by_recorded_rollback
+    requires: [sandbox_dry_run, validation, auto_revert_on_failure, evidence_record]
+    bounds:
+      max_partitions_reprocessed: 3
+      max_rows_quarantined_pct: 1.0
+      config_keys_allowed: [retries, timeout_s, parallelism, cluster_size]
+    examples: [reprocess_partition, quarantine_bad_records, revert_config, resize_cluster]
+
+  - class: 3
+    name: Irreversible or regulated
+    description: >
+      Schema change, deletion or overwrite of retained data, credential rotation,
+      or any change to a GxP-relevant system.
+    authority: human            # never automatic, under any circumstance
+    reversible: no
+    requires: [human_approval, change_record, evidence_record]
+    agent_may: [diagnose, prepare_change, assemble_evidence, draft_rollback_plan]
+    agent_may_not: [execute]
+    examples: [alter_schema, delete_records, rotate_credentials, change_retention]
+
+# --------------------------------------------------------------------------- #
+# Guardrails — the circuit breakers
+# --------------------------------------------------------------------------- #
+guardrails:
+
+  rate_limit:
+    max_actions_per_workload: 3
+    window_hours: 24
+    on_exceed: escalate_to_human
+
+  repeat_guard:
+    # The same fix working twice is not a success. It is a defect wearing a
+    # disguise, and the second occurrence should reach an engineer.
+    max_same_action: 2
+    window_hours: 24
+    on_exceed: stop_and_raise_defect
+
+  freeze_windows:
+    respect_change_freeze: true
+    respect_validation_period: true
+    on_freeze: observe_only
+
+  active_incident:
+    # Never act underneath a human who already owns the problem.
+    if_human_incident_open: observe_only
+
+  kill_switch:
+    scope: [workload, domain, global]
+    default_state: enabled
+
+  blast_radius:
+    require_topology_check: true      # reverse-engineer-iac supplies the topology
+    max_downstream_consumers: 5
+    on_exceed: propose_only
+
+# --------------------------------------------------------------------------- #
+# Runbooks — check id -> what may be done about it
+# --------------------------------------------------------------------------- #
+runbooks:
+
+  - monitor: FUN-01
+    symptom: Test suite failed on deploy
+    diagnose: [read_failing_suite, compare_to_last_green, check_dependency_versions]
+    action: block_promotion
+    class: 0
+    validate: FUN-01
+
+  - monitor: FUN-03
+    symptom: Data quality expectations breached
+    diagnose: [profile_current_batch, compare_to_baseline, locate_offending_source]
+    action: quarantine_bad_records
+    class: 2
+    validate: FUN-03
+    on_validate_fail: revert_and_escalate
+
+  - monitor: FUN-04
+    symptom: Reconciliation variance above tolerance
+    diagnose: [identify_missing_keys, check_late_arriving_data, check_source_watermark]
+    action: reprocess_partition
+    class: 2
+    validate: FUN-04
+    on_validate_fail: revert_and_escalate
+
+  - monitor: NFR-01
+    symptom: SLO burn rate exceeded
+    diagnose: [correlate_run_duration, check_upstream_latency, check_resource_saturation]
+    action: scale_out
+    class: 1
+    validate: NFR-01
+
+  - monitor: NFR-04
+    symptom: Cost forecast breaching budget
+    diagnose: [attribute_cost_delta, identify_dominant_workload, check_cluster_sizing]
+    action: resize_cluster
+    class: 2
+    validate: NFR-04
+
+  - monitor: CFG-01
+    symptom: Infrastructure drift detected
+    diagnose: [recover_deployed_topology, diff_against_declared, identify_change_origin]
+    action: revert_config
+    class: 2
+    validate: CFG-01
+    note: >
+      Reverting drift is safe only where the declared state is authoritative.
+      Where drift originated from an approved emergency change, the agent
+      proposes reconciliation of the code instead — it does not overwrite it.
+
+  - monitor: SEC-02
+    symptom: Unmasked sensitive data detected
+    diagnose: [locate_column, check_classification_source, identify_exposure_path]
+    action: restrict_access_and_notify
+    class: 3                        # touches access to regulated data
+    validate: SEC-02
+
+# --------------------------------------------------------------------------- #
+# Learning — proposals only
+# --------------------------------------------------------------------------- #
+learning:
+  emits: [proposed_check, proposed_threshold, proposed_runbook]
+  target: specs/base.yaml
+  acceptance: human                 # the spec is only ever changed by a person
+  note: >
+    Every incident the loop could not resolve is a candidate check. That is how
+    the gate gets stronger: production teaches the checklist, a human ratifies it.
