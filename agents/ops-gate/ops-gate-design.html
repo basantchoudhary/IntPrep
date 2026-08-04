@@ -144,6 +144,20 @@
   .acard.base b::after{content:" •";color:var(--teal)}
   .lgd{padding:0 12px 11px;font-size:10.5px;color:var(--mute);font-weight:600;text-align:center}
 
+  .profiles{
+    display:grid;grid-template-columns:auto repeat(4,1fr);gap:7px;align-items:stretch;
+    padding:0 12px 9px
+  }
+  .plabel{
+    display:flex;align-items:center;font-size:10px;font-weight:800;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--mute);max-width:78px;line-height:1.25
+  }
+  .pcard{
+    border:1px solid var(--line);border-radius:7px;background:#fff;padding:6px 8px;text-align:center
+  }
+  .pcard b{display:block;font-size:11px;font-weight:800;color:var(--navy)}
+  .pcard small{display:block;margin-top:2px;font-size:9.5px;line-height:1.3;color:var(--mute)}
+
   /* flow */
   .flow{display:flex;align-items:stretch;gap:0;margin:4px 0 2px}
   .fs{
@@ -287,9 +301,9 @@
         <div class="grp">
           <div class="gh"><span>Functional</span><em>does it do the right thing?</em></div>
           <div class="cards c3">
-            <div class="acard base"><b>Test &amp; Coverage</b><small>suites, critical path</small></div>
-            <div class="acard base"><b>Data Quality</b><small>expectations, profiling</small></div>
-            <div class="acard base"><b>Reconciliation</b><small>source vs target</small></div>
+            <div class="acard base"><b>Tests<br>&amp; Coverage</b><small>suites, critical path</small></div>
+            <div class="acard base"><b>Output<br>Quality</b><small>meets its declared expectation</small></div>
+            <div class="acard"><b>Contract<br>Conformance</b><small>schema, interface, semantics</small></div>
           </div>
         </div>
         <div class="grp nf">
@@ -304,7 +318,15 @@
         </div>
       </div>
 
-      <div class="lgd">Each check group is an agent that returns evidence — never a verdict. &nbsp;•&nbsp; marks a reused base agent.</div>
+      <div class="profiles">
+        <div class="plabel">Workload profiles</div>
+        <div class="pcard"><b>Data Engineering</b><small>quality, reconciliation, freshness</small></div>
+        <div class="pcard"><b>BI &amp; Analytics</b><small>metric accuracy, semantic model</small></div>
+        <div class="pcard"><b>ML Engineering</b><small>model eval, drift, feature parity</small></div>
+        <div class="pcard"><b>AI Engineering</b><small>answer eval, groundedness, safety</small></div>
+      </div>
+
+      <div class="lgd">Same check groups for every workload — only the profile's expectations differ. &nbsp;·&nbsp; Each group is an agent returning evidence, never a verdict. &nbsp;·&nbsp; <b>•</b> marks a reused base agent.</div>
     </div>
 
   </div>
