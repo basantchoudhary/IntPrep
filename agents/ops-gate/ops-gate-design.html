@@ -106,6 +106,44 @@
   .span.good{border-top:2px solid var(--teal)}
   .span.good span{color:var(--teal)}
 
+  /* structured lane: flow row -> spine -> check-group agents */
+  .wgrid{
+    display:grid;
+    grid-template-columns:116px 20px 1fr 20px 1.05fr 20px .82fr 20px 1.05fr;
+    align-items:stretch;padding:11px 12px 0
+  }
+  .drop{display:grid;grid-template-columns:116px 20px 1fr 20px 1.05fr 20px .82fr 20px 1.05fr;
+    height:15px;padding:0 12px}
+  .vl{width:0;justify-self:center;border-left:2px solid var(--teal);height:100%}
+  .vl.dash{border-left-style:dashed;border-left-color:#9FC4BB}
+  .gate{background:var(--navy);border-color:var(--navy)}
+  .gate b{color:#fff} .gate small{color:#C6D6EC}
+
+  .spine{
+    margin:0 12px;border:1px solid var(--teal);background:#E9F4F1;border-radius:9px;
+    padding:8px 13px;display:flex;align-items:center;justify-content:center;gap:12px;text-align:center
+  }
+  .spine b{font-size:13.5px;font-weight:800;color:#0B5F53;letter-spacing:-.01em}
+  .spine small{font-size:11px;color:#3F7A6F;font-weight:600}
+
+  .fan{display:grid;grid-template-columns:3fr 5fr;gap:12px;height:14px;padding:0 12px}
+  .groups{display:grid;grid-template-columns:3fr 5fr;gap:12px;padding:0 12px 10px}
+  .grp{border:1px solid #C9DED9;border-radius:9px;overflow:hidden;background:#F7FBFA}
+  .grp .gh{
+    padding:5px 10px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:#fff;background:#3F8F80;display:flex;justify-content:space-between;align-items:baseline
+  }
+  .grp .gh em{font-style:normal;font-size:9.5px;letter-spacing:.02em;text-transform:none;opacity:.9}
+  .grp.nf .gh{background:#2F6E8F}
+  .cards{display:grid;gap:6px;padding:8px}
+  .c3{grid-template-columns:repeat(3,1fr)} .c5{grid-template-columns:repeat(5,1fr)}
+  .acard{border:1px solid #C9DED9;background:#fff;border-radius:7px;padding:6px 7px;text-align:center}
+  .acard b{display:block;font-size:11px;font-weight:800;color:#16202E;line-height:1.25}
+  .acard small{display:block;margin-top:2px;font-size:9.5px;line-height:1.3;color:var(--mute)}
+  .acard.base{background:#EDF6F3;border-color:#9FC9BF}
+  .acard.base b::after{content:" •";color:var(--teal)}
+  .lgd{padding:0 12px 11px;font-size:10.5px;color:var(--mute);font-weight:600;text-align:center}
+
   /* flow */
   .flow{display:flex;align-items:stretch;gap:0;margin:4px 0 2px}
   .fs{
@@ -211,34 +249,64 @@
 
     <div class="lane good">
       <div class="lh"><span>With Ops Gate</span><em>hours, and identical every time</em></div>
-      <div class="rail">
+
+      <div class="wgrid">
         <div class="pgroup">
-          <span class="pchip ok">Project A · dev ✓</span>
-          <span class="pchip ok">Project B · dev ✓</span>
-          <span class="pchip ok">Project C · dev ✓</span>
+          <span class="pchip ok">Project A · dev</span>
+          <span class="pchip ok">Project B · dev</span>
+          <span class="pchip ok">Project C · dev</span>
         </div>
         <div class="ar">→</div>
-        <div class="st ok"><b>Self-check during build</b><small>same spec, run by the team, fails early</small></div>
+        <div class="st ok"><b>Self-check<br>during build</b><small>same spec, run by the team</small></div>
         <div class="ar">→</div>
-        <div class="st ok"><b>Gate evaluates</b><small>evidence bundle, deterministic verdict</small></div>
+        <div class="st gate"><b>OPS GATE</b><small>evidence bundle · deterministic verdict</small></div>
         <div class="ar">→</div>
-        <div class="st sign"><b>Ops signs</b><small>reviews evidence, not prose</small></div>
+        <div class="st sign"><b>Ops signs</b><small>evidence, not prose</small></div>
         <div class="ar">→</div>
         <div class="st prod"><b>Production<br>+ day-2 monitors</b><small>the same checks keep running</small></div>
       </div>
-      <div class="span good"><span>one versioned spec — used at all three points, reused by every project</span></div>
+
+      <div class="drop">
+        <div></div><div></div>
+        <div class="vl dash" style="grid-column:3"></div>
+        <div class="vl" style="grid-column:5"></div>
+        <div class="vl dash" style="grid-column:9"></div>
+      </div>
+
+      <div class="spine">
+        <b>Knowledge — Checklist as Code</b>
+        <small>versioned · declarative · one source of truth for self-check, gate and day-2</small>
+      </div>
+
+      <div class="fan">
+        <div class="vl"></div>
+        <div class="vl"></div>
+      </div>
+
+      <div class="groups">
+        <div class="grp">
+          <div class="gh"><span>Functional</span><em>does it do the right thing?</em></div>
+          <div class="cards c3">
+            <div class="acard base"><b>Test &amp; Coverage</b><small>suites, critical path</small></div>
+            <div class="acard base"><b>Data Quality</b><small>expectations, profiling</small></div>
+            <div class="acard base"><b>Reconciliation</b><small>source vs target</small></div>
+          </div>
+        </div>
+        <div class="grp nf">
+          <div class="gh"><span>Non-functional</span><em>will it survive production, and is it accountable?</em></div>
+          <div class="cards c5">
+            <div class="acard"><b>Observability<br>&amp; SLO</b><small>alerts, failure points</small></div>
+            <div class="acard"><b>Cost<br>&amp; FinOps</b><small>budget, forecast</small></div>
+            <div class="acard base"><b>Config<br>&amp; Infra</b><small>drift, rollback</small></div>
+            <div class="acard"><b>Security<br>&amp; Access</b><small>secrets, least privilege</small></div>
+            <div class="acard"><b>Regulatory<br>&amp; Attestation</b><small>GxP, DPIA, owner</small></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lgd">Each check group is an agent that returns evidence — never a verdict. &nbsp;•&nbsp; marks a reused base agent.</div>
     </div>
 
-  </div>
-
-  <div class="sect">
-    <h3>What must be assured</h3>
-    <div class="grid g4">
-      <div class="box tint"><b class="t">Functional</b><p class="n">Tests, data quality, profiling, reconciliation</p></div>
-      <div class="box tint"><b class="t">Non-functional</b><p class="n">SLO, alerts, failure points, cost, rollback</p></div>
-      <div class="box tint"><b class="t">Config &amp; Security</b><p class="n">Zero drift, no secrets, least privilege, masking</p></div>
-      <div class="box tint"><b class="t">Regulatory &amp; Org</b><p class="n">GxP, DPIA, named owner, on-call rota</p></div>
-    </div>
   </div>
 
   <div class="sect">
