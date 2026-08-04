@@ -62,6 +62,41 @@
   .ar{display:grid;place-items:center;color:#9AA8B8;font-size:14px;padding:0 7px;flex:none}
 
   .lgrid{display:grid;grid-template-columns:1fr 18px 1fr 18px 1fr 18px 1fr 18px 1fr;padding:11px 12px 0}
+  .l7{
+    display:grid;padding:11px 12px 0;
+    grid-template-columns:1fr 13px 1fr 13px 1fr 13px 1fr 13px 1fr 13px 1fr 13px 1.05fr
+  }
+  .l7 .node{padding:8px 5px}
+  .l7 .node b{font-size:11.5px;line-height:1.2}
+  .l7 .node small{font-size:9.5px;margin-top:2px}
+  .l7 .ar{padding:0 2px;font-size:12px}
+  .tagm.amb{background:var(--amber)!important}
+
+  /* base agent foundation band */
+  .fan4{display:grid;grid-template-columns:1fr 1fr 2.1fr;height:13px;padding:0 12px;gap:8px}
+  .bgrid{display:grid;grid-template-columns:1fr 1fr 2.1fr;gap:8px;padding:0 12px}
+  .bcard.wide{border-color:var(--teal);background:#E4F2EE}
+  .bcard .reuse{
+    display:inline-block;margin-left:6px;font-size:8.5px;font-weight:800;letter-spacing:.05em;
+    text-transform:uppercase;background:var(--teal);color:#fff;border-radius:3px;padding:1px 5px;
+    vertical-align:middle
+  }
+  .subs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+  .sub{background:#fff;border:1px solid #C9DED9;border-radius:6px;padding:5px 7px}
+  .sub b{font-size:10px;font-weight:800;color:#0B5F53;display:block;line-height:1.2}
+  .sub span{display:block;font-size:9px;color:var(--mute);font-weight:600;margin-top:1px}
+  .bcard{border:1px solid #9FC9BF;background:#EDF6F3;border-radius:8px;padding:8px 9px}
+  .bcard b{display:block;font-size:11.5px;font-weight:800;color:#0B5F53;line-height:1.25}
+  .bcard em{display:block;font-style:normal;font-size:9.5px;color:#3F7A6F;font-weight:700;margin-top:2px}
+  .bcard .tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:3px}
+  .bcard .tg{
+    font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:#fff;
+    border:1px solid #C9DED9;border-radius:3px;padding:1px 4px;color:#3F7A6F
+  }
+  .bandlbl{
+    padding:9px 12px 5px;font-size:10px;font-weight:800;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--mute)
+  }
   .node{border-radius:8px;padding:9px 8px;text-align:center;border:1px solid var(--line);background:#fff}
   .node b{display:block;font-size:12.5px;font-weight:800;letter-spacing:.01em}
   .node small{display:block;margin-top:2px;font-size:10px;line-height:1.35;color:var(--mute)}
@@ -170,68 +205,74 @@
     </div>
 
     <div class="lane act">
-      <div class="lh"><span>When a monitor breaches</span><em>one agentic step in an otherwise deterministic loop</em></div>
+      <div class="lh"><span>When something breaks in production</span><em>reproduce → fix → prove → deploy → roll back if needed</em></div>
 
-      <div class="lgrid">
-        <div class="node det"><b>Detect</b><small>the same rule that gated it</small><span class="tagm">Rule</span></div>
+      <div class="l7">
+        <div class="node det"><b>Detect</b><small>monitor breach or prod bug</small><span class="tagm">Rule</span></div>
         <div class="ar">→</div>
-        <div class="node agt"><b>Diagnose</b><small>correlate signals, form a hypothesis</small><span class="tagm">Agent</span></div>
+        <div class="node det"><b>Sandbox</b><small>code · config · data replica</small><span class="tagm">Built</span></div>
         <div class="ar">→</div>
-        <div class="node det"><b>Decide</b><small>action class → who may act</small><span class="tagm">Policy</span></div>
+        <div class="node agt"><b>Simulate &amp;<br>troubleshoot</b><small>reproduce, isolate the cause</small><span class="tagm">Agent</span></div>
         <div class="ar">→</div>
-        <div class="node det"><b>Remediate</b><small>a known runbook action, bounded</small><span class="tagm">Runbook</span></div>
+        <div class="node agt"><b>Fix</b><small>proposed change, class-bounded</small><span class="tagm">Agent</span></div>
         <div class="ar">→</div>
-        <div class="node det"><b>Validate</b><small>re-run the check that failed</small><span class="tagm">Rule</span></div>
+        <div class="node det"><b>Test</b><small>suites + data expectations</small><span class="tagm">Harness</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Deploy</b><small>the project's own CI/CD</small><span class="tagm amb">Class-gated</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Validate<br>or roll back</b><small>re-run the check that failed</small><span class="tagm">Rule</span></div>
       </div>
 
       <div class="branch">
-        <div class="out good">✓&nbsp; Check passes → resolved, recorded, back to steady state</div>
-        <div class="out bad">✗&nbsp; Check still fails → auto-revert, escalate to a named human</div>
+        <div class="out good">✓&nbsp; Check passes in production → resolved, recorded, back to steady state</div>
+        <div class="out bad">✗&nbsp; Check still fails → roll back through the same pipeline, escalate to a named human</div>
       </div>
 
-      <div class="drop">
-        <div class="vl" style="grid-column:1"></div>
-        <div class="vl dash" style="grid-column:5"></div>
-        <div class="vl" style="grid-column:9"></div>
+      <div class="bandlbl">Base agents — the reusable foundation this loop is built from</div>
+      <div class="fan4">
+        <div class="vl"></div><div class="vl"></div><div class="vl"></div>
+      </div>
+      <div class="bgrid">
+        <div class="bcard">
+          <b>Sandbox Creator</b>
+          <em>code · config · data</em>
+          <div class="tags"><span class="tg">Sandbox</span><span class="tg">Simulate</span><span class="tg">Test</span></div>
+        </div>
+        <div class="bcard">
+          <b>Reverse Engineer IaC</b>
+          <em>CI/CD for code, platform, config</em>
+          <div class="tags"><span class="tg">Sandbox</span><span class="tg">Deploy</span><span class="tg">Roll back</span></div>
+        </div>
+        <div class="bcard wide">
+          <b>Regression Agent — functional &amp; non-functional <span class="reuse">the same agent Ops Gate runs</span></b>
+          <div class="subs">
+            <div class="sub"><b>Test Harness Creator</b><span>suites · coverage · regression</span></div>
+            <div class="sub"><b>Data Expectation Service</b><span>quality · profiling · reconciliation</span></div>
+          </div>
+          <div class="tags"><span class="tg">Detect</span><span class="tg">Test</span><span class="tg">Validate</span></div>
+        </div>
       </div>
 
+      <div class="fan4" style="margin-top:9px">
+        <div class="vl"></div><div class="vl"></div><div class="vl"></div>
+      </div>
       <div class="spine">
-        <b>Knowledge — Checklist as Code</b>
+        <b>Knowledge — Checklist &amp; Policy as Code</b>
         <small>the same versioned spec the gate used · learning proposes changes, a human accepts them</small>
       </div>
 
       <div class="lgd">
-        Detection and validation read the spec. Remediation is bounded by policy declared in the spec.
-        Nothing in this loop invents a rule at runtime.
+        The sandbox is standing and maintained, not built during an incident — reproduction is minutes, not hours.
+        &nbsp;·&nbsp; The regression agent that proves the fix is the same one that gated the release, so a fix cannot
+        pass a lower bar than the original deployment did.
       </div>
     </div>
   </div>
 
   <div class="sect grid g3">
-    <div class="box tint">
-      <b class="t">The problem</b>
-      <ul class="tight">
-        <li>Assurance stops at go-live; the system drifts away from the bar it was accepted on.</li>
-        <li>Monitoring is built separately from the readiness checks — so the two disagree.</li>
-        <li>Ops carries repetitive, well-understood toil at 3am.</li>
-      </ul>
-    </div>
-    <div class="box tint">
-      <b class="t">What we need</b>
-      <ul class="tight">
-        <li>Monitors that <b>are</b> the gate's checks, not a re-interpretation of them.</li>
-        <li>Automatic recovery for the boring, reversible failures — with proof it worked.</li>
-        <li>An escalation ladder that makes automation safe in a regulated estate.</li>
-      </ul>
-    </div>
-    <div class="box tint">
-      <b class="t">The line we hold</b>
-      <ul class="tight">
-        <li>The agent may <b>restore a known good state</b>. It may not invent a new one.</li>
-        <li>Every action is validated by re-running the check, or it is reverted.</li>
-        <li>Healing the same fault twice is a <b>defect signal</b>, not a success.</li>
-      </ul>
-    </div>
+    <div class="box tint"><b class="t">The problem</b><p class="n">Assurance stops at go-live, monitoring is built separately from the readiness checks, and Ops carries well-understood toil at 3am.</p></div>
+    <div class="box tint"><b class="t">What we need</b><p class="n">Monitors that <b>are</b> the gate's checks, a standing sandbox to reproduce in, and an escalation ladder that makes automation safe in a regulated estate.</p></div>
+    <div class="box tint"><b class="t">The line we hold</b><p class="n">The agent proposes and proves a fix in the sandbox. Production is changed through the project's own pipeline, gated by action class — never around it.</p></div>
   </div>
 
   <div class="foot">
@@ -297,11 +338,11 @@
     <div class="box">
       <b class="t">Composed from the same base agents</b>
       <ul class="none">
-        <li><b>Sandbox Creator</b> — dry-runs a class 2 remediation before it touches production</li>
-        <li><b>Reverse Engineer IaC</b> — supplies topology for blast-radius checks, and detects the drift that triggers CFG monitors</li>
-        <li><b>Data Expectation Services</b> — the DQ monitors, and the quarantine logic behind them</li>
-        <li><b>Test Framework</b> — re-runs the relevant suite as post-remediation validation</li>
+        <li><b>Sandbox Creator</b> (code · config · data) — the standing replica the fault is reproduced and the fix proven in</li>
+        <li><b>Reverse Engineer IaC</b> (CI/CD for code, platform, config) — rebuilds the sandbox, ships the fix through the project's own pipeline, and rolls it back</li>
+        <li><b>Regression Agent</b> (functional &amp; non-functional) — Test Harness Creator plus Data Expectation Service. <b>The same agent Ops Gate runs</b>, so a hotfix is held to the bar the release was accepted on</li>
       </ul>
+      <p class="n" style="margin-top:7px"><b>Three agents, two capabilities.</b> Nothing here was built for self-healing — it was already built for the gate.</p>
     </div>
     <div class="box">
       <b class="t">Guardrails that stop the healer</b>
