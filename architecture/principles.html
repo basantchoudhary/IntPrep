@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driving Principles — Data &amp; AI Platform</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#fff;color:var(--ink);
+    font:400 16px/1.35 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .slide{max-width:1440px;margin:0 auto;padding:30px 32px 26px}
+
+  header{text-align:center;margin-bottom:24px}
+  h1{margin:0;font-size:clamp(26px,3vw,38px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .tag{margin:7px 0 0;font-size:clamp(13px,1.3vw,16px);font-weight:600;color:var(--teal)}
+
+  .cols{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;align-items:stretch}
+
+  .col{
+    border:1px solid var(--line);border-radius:12px;background:#fff;
+    display:flex;flex-direction:column;overflow:hidden;
+  }
+  .col .hd{padding:11px 14px;color:#fff;display:flex;align-items:center;gap:9px}
+  .col .hd .n{
+    width:21px;height:21px;border-radius:50%;background:rgba(255,255,255,.22);
+    display:grid;place-items:center;font-size:11.5px;font-weight:800;flex:none
+  }
+  .col .hd b{font-size:14.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+  .col .sub{
+    padding:8px 14px;font-size:11.5px;font-weight:700;color:var(--mute);
+    background:var(--panel);border-bottom:1px solid var(--line)
+  }
+  .col ul{margin:0;padding:12px;list-style:none;display:flex;flex-direction:column;gap:11px;flex:1}
+  .col li b{display:block;font-size:14.5px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+  .col li span{display:block;margin-top:2px;font-size:12.5px;line-height:1.45;color:var(--mute)}
+
+  .c1 .hd{background:var(--navy)}
+  .c2 .hd{background:var(--teal)}
+  .c3 .hd{background:var(--agent)}
+  .c4 .hd{background:var(--amber)}
+
+  .c3 li b{color:var(--agent)}
+
+  footer{
+    margin-top:20px;border-top:2px solid var(--navy);padding-top:14px;text-align:center;
+  }
+  footer p{
+    margin:0;font-size:clamp(14px,1.5vw,19px);font-weight:800;color:var(--navy);letter-spacing:-.01em
+  }
+  footer span{display:block;margin-top:5px;font-size:12.5px;font-weight:600;color:var(--mute)}
+
+  @media print{
+    @page{size:landscape;margin:8mm}
+    .slide{max-width:none;padding:0}
+  }
+</style>
+</head>
+<body>
+<div class="slide">
+
+  <header>
+    <h1>Driving Principles</h1>
+    <p class="tag">The rules that decide every design call — from architecture to production sign-off.</p>
+  </header>
+
+  <div class="cols">
+
+    <section class="col c1">
+      <div class="hd"><span class="n">1</span><b>Think</b></div>
+      <div class="sub">Altitude before build</div>
+      <ul>
+        <li><b>System thinking</b><span>Optimise the whole, not the part</span></li>
+        <li><b>Platform thinking</b><span>Build for the tenth team, not the first</span></li>
+        <li><b>Data &amp; AI is software</b><span>Same engineering discipline, no exemptions</span></li>
+        <li><b>Simplicity as a constraint</b><span>Complexity has to be earned</span></li>
+      </ul>
+    </section>
+
+    <section class="col c2">
+      <div class="hd"><span class="n">2</span><b>Compose</b></div>
+      <div class="sub">Build once, reuse everywhere</div>
+      <ul>
+        <li><b>Lego blocks</b><span>Small, replaceable capabilities</span></li>
+        <li><b>Contracts over coupling</b><span>Interfaces, not integrations</span></li>
+        <li><b>Golden path</b><span>Best practice is the default path</span></li>
+        <li><b>Self-serve</b><span>Teams consume without waiting on us</span></li>
+      </ul>
+    </section>
+
+    <section class="col c3">
+      <div class="hd"><span class="n">3</span><b>Execute</b></div>
+      <div class="sub">Deterministic first</div>
+      <ul>
+        <li><b>Deterministic by default</b><span>Rules, policies, validations, gates</span></li>
+        <li><b>Agentic by exception</b><span>LLM only where judgement is required</span></li>
+        <li><b>Reproducible &amp; idempotent</b><span>Same input, same result, every time</span></li>
+        <li><b>Human accountable at the boundary</b><span>Agents assemble evidence — a person signs</span></li>
+      </ul>
+    </section>
+
+    <section class="col c4">
+      <div class="hd"><span class="n">4</span><b>Operate &amp; Assure</b></div>
+      <div class="sub">Trusted in production</div>
+      <ul>
+        <li><b>Cross-cutting is first class</b><span>Quality, security, cost, observability designed in</span></li>
+        <li><b>Design for failure</b><span>Small blast radius, always reversible</span></li>
+        <li><b>Fail fast, fail visibly</b><span>Break at the gate, never in production</span></li>
+        <li><b>Self-explanatory</b><span>Readable by humans and by agents</span></li>
+        <li><b>Evidence by construction</b><span>Audit is an output, not a phase</span></li>
+      </ul>
+    </section>
+
+  </div>
+
+  <footer>
+    <p>Deterministic by default &nbsp;·&nbsp; Agentic by exception &nbsp;·&nbsp; Reusable by design</p>
+    <span>Every capability we ship is judged against these four columns before it reaches production.</span>
+  </footer>
+
+</div>
+</body>
+</html>
