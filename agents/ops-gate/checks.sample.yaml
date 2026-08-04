@@ -1,0 +1,218 @@
+# Ops Gate — check specification (extract)
+# The checklist as code. One versioned spec, three uses:
+#   1. project team self-checks against it before requesting handover
+#   2. the gate evaluates it deterministically to produce the verdict
+#   3. passing checks marked `day2:` deploy as live monitors after handover
+#
+# category:  A = auto-verified   B = auto-assembled, human-judged
+#            C = attested (manual)  D = not applicable (waived)
+
+spec_version: 2.3.0
+domain: data-and-ai-platform
+owner: eai-ops
+
+checks:
+
+  # ---------- FUNCTIONAL ----------
+  - id: FUN-01
+    title: Automated test suite passes
+    category: A
+    severity: blocker
+    evidence:
+      source: testing-framework-service
+      query: suites.status
+    rule: all(status == "passed")
+    on_fail:
+      agent: test-framework-generator     # drafts the missing coverage
+    day2:
+      schedule: on-deploy
+
+  - id: FUN-02
+    title: Critical-path test coverage
+    category: A
+    severity: blocker
+    evidence:
+      source: testing-framework-service
+      query: coverage.critical_path_pct
+    rule: value >= 80
+
+  - id: FUN-03
+    title: Data quality expectations defined and passing
+    category: A
+    severity: blocker
+    evidence:
+      source: data-expectation-service
+      query: expectations.{defined,pass_rate}
+    rule: defined > 0 and pass_rate >= 99.5
+    on_fail:
+      agent: data-expectation-agent       # profiles the data, proposes rules
+    day2:
+      schedule: every_run
+      alert: dq-breach
+
+  - id: FUN-04
+    title: Source-to-target reconciliation in place
+    category: A
+    severity: blocker
+    evidence:
+      source: data-expectation-service
+      query: reconciliation.variance_pct
+    rule: value <= 0.1
+    day2:
+      schedule: daily
+
+  # ---------- NON-FUNCTIONAL ----------
+  - id: NFR-01
+    title: SLO defined, measurable and instrumented
+    category: A
+    severity: blocker
+    evidence:
+      source: observability-service
+      query: slo.{defined,instrumented}
+    rule: defined and instrumented
+    day2:
+      schedule: continuous
+      alert: slo-burn
+
+  - id: NFR-02
+    title: SLO target is realistic for the architecture
+    category: B                            # agent assembles, Ops judges
+    severity: major
+    evidence:
+      source: agent
+      prompt: >
+        Compare the declared SLO against observed performance in the sandbox run
+        and the architecture's known bottlenecks. Summarise the risk. Do not decide.
+
+  - id: NFR-03
+    title: Alert rules exist for every failure point
+    category: A
+    severity: blocker
+    evidence:
+      source: observability-service
+      query: coverage.failure_points_alerted_pct
+    rule: value == 100
+    on_fail:
+      agent: ops-gate-agent               # drafts the missing alert rules
+    day2:
+      schedule: continuous
+
+  - id: NFR-04
+    title: Cost tagged, budgeted and forecast
+    category: A
+    severity: major
+    evidence:
+      source: finops-service              # CostAgent
+      query: workload.{tagged,budget_set,forecast_pct_variance}
+    rule: tagged and budget_set and forecast_pct_variance <= 20
+    day2:
+      schedule: daily
+      alert: budget-breach
+
+  - id: NFR-05
+    title: Failure modes documented with blast radius and recovery
+    category: B
+    severity: blocker
+    evidence:
+      source: agent
+      prompt: >
+        Extract every declared failure mode from the design pack and runbook.
+        Cross-check against the deployed topology recovered by the IaC agent.
+        List failure points present in the topology but absent from the docs.
+
+  - id: NFR-06
+    title: Rollback demonstrated, not asserted
+    category: A
+    severity: blocker
+    evidence:
+      source: sandbox-creator             # rollback actually executed in a sandbox
+      query: rollback.{executed,succeeded,duration_s}
+    rule: executed and succeeded
+
+  # ---------- CONFIGURATION & INFRASTRUCTURE ----------
+  - id: CFG-01
+    title: All configuration externalised, no environment drift
+    category: A
+    severity: blocker
+    evidence:
+      source: reverse-engineer-iac
+      query: drift.resources_differing
+    rule: value == 0
+
+  - id: CFG-02
+    title: No hardcoded secrets or credentials
+    category: A
+    severity: blocker
+    evidence:
+      source: repo-scan
+      query: findings.secrets
+    rule: value == 0
+
+  - id: CFG-03
+    title: Infrastructure reproducible from code
+    category: A
+    severity: blocker
+    evidence:
+      source: sandbox-creator
+      query: iac.clean_deploy
+    rule: value == true
+
+  # ---------- SECURITY & DATA ----------
+  - id: SEC-01
+    title: Access follows least privilege (RBAC/ABAC)
+    category: A
+    severity: blocker
+    evidence:
+      source: governance-service
+      query: iam.excess_permissions
+    rule: value == 0
+
+  - id: SEC-02
+    title: Sensitive data classified and masked
+    category: A
+    severity: blocker
+    evidence:
+      source: catalog-service
+      query: classification.{coverage_pct,unmasked_sensitive}
+    rule: coverage_pct == 100 and unmasked_sensitive == 0
+
+  # ---------- REGULATORY & ORGANISATIONAL ----------
+  - id: REG-01
+    title: GxP impact assessment complete
+    category: C                            # cannot be automated — attested
+    severity: blocker
+    attestation:
+      role: quality-lead
+      requires: [signature, date, document_link]
+      expires_after_days: 365
+
+  - id: REG-02
+    title: Data privacy impact assessment (DPIA) approved
+    category: C
+    severity: blocker
+    attestation:
+      role: data-protection-officer
+      requires: [signature, date, document_link]
+
+  - id: ORG-01
+    title: Named production owner and on-call rota
+    category: C
+    severity: blocker
+    attestation:
+      role: delivery-lead
+      requires: [owner, rota_link]
+
+  - id: ORG-02
+    title: Third-party vendor dependency reviewed
+    category: D                            # waived where no vendor is involved
+    severity: major
+    waiver:
+      requires: [reason, approver, expiry_date]
+
+# ---------- VERDICT ----------
+# Deterministic. No model involvement.
+verdict:
+  fail:        any(severity == blocker and status != pass)
+  conditional: any(severity == major   and status != pass)
+  pass:        all(status == pass)
+  signature:   required            # a named human signs. always.

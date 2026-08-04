@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ops Gate Agent — Requirement &amp; Design</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12);
+  }
+
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:18px}
+  .ph .k{
+    font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none
+  }
+  .ph .k.bk{background:var(--mute)}
+  .ph h2{margin:0;font-size:clamp(20px,2.2vw,27px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+
+  h3{
+    margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--mute)
+  }
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .sect{margin-bottom:18px}
+
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px}
+  ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0}
+  ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+
+  /* problem / promise */
+  .prob{border-left:4px solid var(--red);background:#FCF3F2}
+  .prob b.t{color:var(--red)}
+  .prom{border-left:4px solid var(--teal);background:#F1F8F6}
+  .prom b.t{color:var(--teal)}
+
+  /* category cards */
+  .cat{border-radius:10px;border:1px solid var(--line);overflow:hidden}
+  .cat .h{padding:9px 13px;color:#fff;display:flex;align-items:center;gap:8px}
+  .cat .h .l{
+    width:22px;height:22px;border-radius:5px;background:rgba(255,255,255,.25);
+    display:grid;place-items:center;font-size:12px;font-weight:800;flex:none
+  }
+  .cat .h b{font-size:13.5px;font-weight:800}
+  .cat .c{padding:11px 13px}
+  .cat .c .who{font-size:11.5px;font-weight:700;color:var(--mute);margin-bottom:6px}
+  .cat .c ul{margin:0;padding-left:15px}
+  .cat .c li{font-size:12.5px;line-height:1.5;color:#33445A}
+  .ca .h{background:var(--teal)} .cb .h{background:var(--agent)}
+  .cc .h{background:var(--amber)} .cd .h{background:var(--mute)}
+
+  /* flow */
+  .flow{display:flex;align-items:stretch;gap:0;margin:4px 0 2px}
+  .fs{
+    flex:1;border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fff;text-align:center
+  }
+  .fs b{display:block;font-size:13px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  .fs span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute)}
+  .fs.hi{background:#EEF3FA;border-color:#B9CDE8}
+  .fs.sig{background:#FBF5E9;border-color:#E4CE9E}
+  .fs.sig b{color:var(--amber)}
+  .fa{display:grid;place-items:center;color:#9AA8B8;font-size:16px;padding:0 7px;flex:none}
+
+  /* layer stack */
+  .lay{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:9px;padding:10px 13px;margin-bottom:7px}
+  .lay .n{
+    width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:none;
+    font-size:12px;font-weight:800;color:#fff;background:var(--navy)
+  }
+  .lay b{font-size:13.5px;font-weight:800;min-width:186px;letter-spacing:-.01em}
+  .lay span{font-size:12.5px;color:#4A5A6E;line-height:1.45}
+  .lay.det{border-left:4px solid var(--navy)}
+  .lay.agt{border-left:4px solid var(--agent)} .lay.agt .n{background:var(--agent)} .lay.agt b{color:var(--agent)}
+  .lay.hum{border-left:4px solid var(--amber)} .lay.hum .n{background:var(--amber)} .lay.hum b{color:var(--amber)}
+
+  /* split */
+  .sp{border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+  .sp h4{margin:0 0 6px;font-size:13.5px;font-weight:800}
+  .sp p{margin:0;font-size:12.5px;line-height:1.55;color:#44536A}
+  .sp.d{background:#EEF3FA;border-color:#C6D6EC} .sp.d h4{color:var(--navy)}
+  .sp.a{background:#F4EFFB;border-color:#DDCCF0} .sp.a h4{color:var(--agent)}
+  .sp.h{background:#FBF5E9;border-color:#E4CE9E} .sp.h h4{color:var(--amber)}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{
+    text-align:left;padding:7px 9px;background:var(--navy);color:#fff;
+    font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase
+  }
+  td{padding:7px 9px;border-bottom:1px solid var(--line);color:#33445A;vertical-align:top}
+  tr:nth-child(even) td{background:#FAFCFD}
+  .pill{
+    display:inline-block;min-width:19px;text-align:center;border-radius:4px;
+    padding:1px 6px;font-size:11px;font-weight:800;color:#fff
+  }
+  .pa{background:var(--teal)} .pb{background:var(--agent)}
+  .pc{background:var(--amber)} .pd{background:var(--mute)}
+
+  pre{
+    margin:0;background:#101B2B;color:#D7E3F2;border-radius:9px;padding:14px 16px;
+    font:500 12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto
+  }
+  pre .c{color:#7C90AA} pre .k{color:#8FD3FF} pre .v{color:#F3C77B}
+
+  .kpi{text-align:center;border:1px solid var(--line);border-radius:10px;padding:13px 10px;background:var(--panel)}
+  .kpi b{display:block;font-size:23px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+  .kpi span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute);font-weight:600}
+
+  .foot{
+    margin-top:16px;border-top:2px solid var(--navy);padding-top:11px;
+    font-size:13.5px;font-weight:800;color:var(--navy);text-align:center
+  }
+  .foot span{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--mute)}
+
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 — REQUIREMENT ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Page 1</span>
+    <h2>Ops Gate Agent — Requirement</h2>
+    <span class="s">Assuring a project <em>before</em> Ops accepts it into production</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box prob">
+      <b class="t">The problem today</b>
+      <ul class="tight">
+        <li>Readiness lives in <b>large documents</b> — reviewed by reading, not by running.</li>
+        <li>Evidence is scattered across tickets, decks, screenshots and email.</li>
+        <li>Gaps surface <b>at go-live</b>, when rework is most expensive.</li>
+        <li>Every engagement invents its own bar — nothing carries forward.</li>
+        <li>Ops inherits a system it cannot explain, monitor or recover.</li>
+      </ul>
+    </div>
+    <div class="box prom">
+      <b class="t">What we need instead</b>
+      <ul class="tight">
+        <li>The handover artefact is <b>executable, not a document</b>.</li>
+        <li>The project team runs the <b>identical gate</b> before requesting handover — no surprises at the door.</li>
+        <li>Every check carries <b>machine-readable evidence</b> or a named attestation.</li>
+        <li>Passing checks <b>become the day-2 monitors</b> — assurance doesn't stop at go-live.</li>
+        <li>One versioned bar, reused by every engagement.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>What must be assured</h3>
+    <div class="grid g4">
+      <div class="box tint">
+        <b class="t">Functional</b>
+        <p class="n">Does it do the right thing?</p>
+        <ul class="tight" style="margin-top:6px">
+          <li>Test harness results</li>
+          <li>Data quality expectations</li>
+          <li>Profiling &amp; reconciliation</li>
+          <li>Critical-path coverage</li>
+        </ul>
+      </div>
+      <div class="box tint">
+        <b class="t">Non-functional</b>
+        <p class="n">Will it survive production?</p>
+        <ul class="tight" style="margin-top:6px">
+          <li>SLA / SLO and alerting</li>
+          <li>Failure points &amp; blast radius</li>
+          <li>Cost budget and forecast</li>
+          <li>Rollback demonstrated</li>
+        </ul>
+      </div>
+      <div class="box tint">
+        <b class="t">Config &amp; Security</b>
+        <p class="n">Is it reproducible and safe?</p>
+        <ul class="tight" style="margin-top:6px">
+          <li>Config externalised, zero drift</li>
+          <li>No hardcoded secrets</li>
+          <li>Least-privilege access</li>
+          <li>Sensitive data classified</li>
+        </ul>
+      </div>
+      <div class="box tint">
+        <b class="t">Regulatory &amp; Org</b>
+        <p class="n">Is it accountable?</p>
+        <ul class="tight" style="margin-top:6px">
+          <li>GxP impact assessment</li>
+          <li>DPIA / privacy approval</li>
+          <li>Named production owner</li>
+          <li>On-call rota in place</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Every check is categorised by how it is verified &nbsp;—&nbsp; nothing is silently skipped</h3>
+    <div class="grid g4">
+      <div class="cat ca">
+        <div class="h"><span class="l">A</span><b>Auto-verified</b></div>
+        <div class="c">
+          <div class="who">Machine reads it. Rule decides. No human.</div>
+          <ul>
+            <li>Test suite passing, coverage ≥ 80%</li>
+            <li>DQ pass rate, recon variance</li>
+            <li>Alerts on 100% of failure points</li>
+            <li>Zero secrets, zero config drift</li>
+            <li>Rollback executed in a sandbox</li>
+          </ul>
+        </div>
+      </div>
+      <div class="cat cb">
+        <div class="h"><span class="l">B</span><b>Auto-assembled</b></div>
+        <div class="c">
+          <div class="who">Agent extracts &amp; summarises. Ops judges.</div>
+          <ul>
+            <li>Is the SLO realistic for this design?</li>
+            <li>Failure modes in the topology but missing from the docs</li>
+            <li>Runbook completeness</li>
+            <li>Fit against the reference architecture</li>
+          </ul>
+        </div>
+      </div>
+      <div class="cat cc">
+        <div class="h"><span class="l">C</span><b>Attested</b></div>
+        <div class="c">
+          <div class="who">Cannot be automated. Named person signs, dated.</div>
+          <ul>
+            <li>GxP impact assessment</li>
+            <li>DPIA / privacy approval</li>
+            <li>Business acceptance</li>
+            <li>Production owner &amp; on-call rota</li>
+            <li>Vendor / contractual dependency</li>
+          </ul>
+        </div>
+      </div>
+      <div class="cat cd">
+        <div class="h"><span class="l">D</span><b>Waived</b></div>
+        <div class="c">
+          <div class="who">Explicitly not applicable — never blank.</div>
+          <ul>
+            <li>Requires a reason and an approver</li>
+            <li>Carries an expiry date</li>
+            <li>Appears in the evidence bundle</li>
+            <li>Re-tested at the next release</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    The maturity measure is the share of checks in Category A — and it rises release on release.
+    <span>Manual work isn't eliminated by pretending it's automated. It's declared, owned, dated and made visible.</span>
+  </div>
+</section>
+
+<!-- ============ PAGE 2 — DESIGN ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Page 2</span>
+    <h2>Ops Gate Agent — Architecture &amp; Design</h2>
+    <span class="s">Deterministic gate · agentic comprehension · human signature</span>
+  </div>
+
+  <div class="sect">
+    <h3>Flow</h3>
+    <div class="flow">
+      <div class="fs"><b>Project team</b><span>self-checks against the same spec</span></div>
+      <div class="fa">→</div>
+      <div class="fs"><b>Collect evidence</b><span>tests, DQ, IaC, cost, telemetry</span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Agent comprehends</b><span>docs &amp; estate → structured claims</span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Gate evaluates</b><span>deterministic verdict</span></div>
+      <div class="fa">→</div>
+      <div class="fs sig"><b>Human signs</b><span>pass / conditional / fail</span></div>
+      <div class="fa">→</div>
+      <div class="fs"><b>Day-2 monitors</b><span>checks deploy as live monitors</span></div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Layers</h3>
+    <div class="lay det"><span class="n">1</span><b>Check spec (as code)</b><span>Versioned, declarative YAML. One source of truth for self-check, gate and day-2 monitoring. This is the reusable artefact.</span></div>
+    <div class="lay det"><span class="n">2</span><b>Evidence collectors</b><span>Deterministic adapters onto the platform's horizontal services — testing, data expectations, observability, FinOps, catalog, repo &amp; IaC scan.</span></div>
+    <div class="lay agt"><span class="n">3</span><b>Comprehension layer (LLM)</b><span>Reads sprawling handover docs and undocumented estate; emits structured claims mapped to check IDs; explains failures; drafts the missing artefact.</span></div>
+    <div class="lay det"><span class="n">4</span><b>Gate engine</b><span>Evaluates evidence against thresholds. Pure rules — replayable, explainable, identical every run. No model involvement in the verdict.</span></div>
+    <div class="lay hum"><span class="n">5</span><b>Evidence bundle &amp; sign-off</b><span>Immutable, versioned, audit-ready. A named person signs. The bundle <em>is</em> the compliance record.</span></div>
+    <div class="lay det"><span class="n">6</span><b>Day-2 handover</b><span>Checks marked <code>day2:</code> deploy as monitors; failures route to the Self-Healing agent with the gate's own remediation.</span></div>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="sp d">
+      <h4>Deterministic — the default</h4>
+      <p>The checklist. Thresholds. Evaluation. The verdict. Evidence integrity and the audit trail. Anything a regulator may ask us to reproduce in three years.</p>
+    </div>
+    <div class="sp a">
+      <h4>Agentic — by exception</h4>
+      <p>Comprehension of unstructured docs and unfamiliar estates. Explaining <em>why</em> a check failed. Proposing remediation. Drafting the missing runbook, alert or DQ rule.</p>
+    </div>
+    <div class="sp h">
+      <h4>Human — always</h4>
+      <p>The production-acceptance signature. Category&nbsp;C attestations. Every waiver. The model never approves a deployment — it assembles the evidence a person signs.</p>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Composed from the base agents</b>
+      <ul class="none">
+        <li><b>Test Framework Generator</b> — supplies functional evidence; drafts the tests when coverage fails</li>
+        <li><b>Data Expectation Services</b> — DQ, profiling, reconciliation evidence; proposes rules where none exist</li>
+        <li><b>Sandbox Creator</b> — proves rollback and clean IaC deploy by <em>executing</em> them in isolation</li>
+        <li><b>Reverse Engineer IaC</b> — recovers the real topology when documentation is stale, and detects drift</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Packaged as a skill — so it travels</b>
+      <ul class="none">
+        <li>Spec + collectors + gate ship as one installable unit</li>
+        <li>A team adopts the bar without adopting our tooling opinions</li>
+        <li>Domain overlays extend the base spec; the core stays versioned centrally</li>
+        <li>Spec version is recorded in every evidence bundle — the bar is auditable over time</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    The handover stops being a document review and becomes a build step.
+    <span>Same spec, three moments: the team's self-check, the gate, and day-2 monitoring.</span>
+  </div>
+</section>
+
+<!-- ============ BACKUP 1 — CHECKLIST ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup 1</span>
+    <h2>Worked example — the checklist, categorised</h2>
+    <span class="s">Extract. Full spec: <code>checks.sample.yaml</code></span>
+  </div>
+  <table>
+    <thead>
+      <tr><th style="width:62px">Cat</th><th style="width:78px">ID</th><th>Check</th><th style="width:31%">How it is verified</th><th style="width:15%">Becomes day-2</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="pill pa">A</span></td><td>FUN-01</td><td>Automated test suite passes</td><td>Testing Framework Service — all suites green</td><td>On every deploy</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>FUN-02</td><td>Critical-path coverage ≥ 80%</td><td>Coverage report threshold</td><td>—</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>FUN-03</td><td>DQ expectations defined &amp; passing ≥ 99.5%</td><td>Data Expectation Service</td><td>Every run + alert</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>FUN-04</td><td>Source-to-target recon variance ≤ 0.1%</td><td>Reconciliation job output</td><td>Daily</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>NFR-01</td><td>SLO defined and instrumented</td><td>Observability service config</td><td>Continuous + burn alert</td></tr>
+      <tr><td><span class="pill pb">B</span></td><td>NFR-02</td><td>SLO target realistic for the architecture</td><td>Agent compares declared SLO to sandbox-observed performance; <b>Ops judges</b></td><td>—</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>NFR-03</td><td>Alerts cover 100% of failure points</td><td>Alert-rule coverage vs failure register</td><td>Continuous</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>NFR-04</td><td>Cost tagged, budgeted, forecast within 20%</td><td>FinOps service — <b>CostAgent</b></td><td>Daily + budget alert</td></tr>
+      <tr><td><span class="pill pb">B</span></td><td>NFR-05</td><td>Failure modes documented with recovery</td><td>Agent diffs declared failure modes against the recovered topology and lists what's missing</td><td>—</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>NFR-06</td><td>Rollback demonstrated, not asserted</td><td><b>Sandbox Creator</b> actually executes the rollback</td><td>Per release</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>CFG-01</td><td>Zero environment drift</td><td><b>Reverse Engineer IaC</b> — deployed vs declared</td><td>Daily</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>CFG-02</td><td>No hardcoded secrets</td><td>Repository scan</td><td>Every commit</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>SEC-01</td><td>Least-privilege access</td><td>IAM excess-permission analysis</td><td>Weekly</td></tr>
+      <tr><td><span class="pill pa">A</span></td><td>SEC-02</td><td>Sensitive data classified &amp; masked</td><td>Catalog classification coverage</td><td>Daily</td></tr>
+      <tr><td><span class="pill pc">C</span></td><td>REG-01</td><td>GxP impact assessment complete</td><td>Quality lead attests — signature, date, document link, 12-month expiry</td><td>Expiry watch</td></tr>
+      <tr><td><span class="pill pc">C</span></td><td>REG-02</td><td>DPIA approved</td><td>DPO attests</td><td>Expiry watch</td></tr>
+      <tr><td><span class="pill pc">C</span></td><td>ORG-01</td><td>Named production owner &amp; on-call rota</td><td>Delivery lead attests</td><td>Rota freshness</td></tr>
+      <tr><td><span class="pill pd">D</span></td><td>ORG-02</td><td>Third-party vendor dependency reviewed</td><td>Waived where no vendor involved — reason, approver, expiry</td><td>Re-tested next release</td></tr>
+    </tbody>
+  </table>
+  <div class="foot">14 of 18 auto-verified · 2 agent-assembled · 3 attested · 1 waived
+    <span>The ratio is the artefact Ops actually cares about — and the number that improves release on release.</span>
+  </div>
+</section>
+
+<!-- ============ BACKUP 2 — CHECK AS CODE ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup 2</span>
+    <h2>The checklist as code</h2>
+    <span class="s">One spec · three uses · versioned</span>
+  </div>
+  <div class="grid g2">
+    <div>
+<pre><span class="c"># auto-verified, with a base agent on failure</span>
+<span class="k">- id:</span> <span class="v">FUN-03</span>
+  <span class="k">title:</span> Data quality expectations passing
+  <span class="k">category:</span> <span class="v">A</span>
+  <span class="k">severity:</span> <span class="v">blocker</span>
+  <span class="k">evidence:</span>
+    <span class="k">source:</span> data-expectation-service
+    <span class="k">query:</span> expectations.{defined,pass_rate}
+  <span class="k">rule:</span> defined > 0 and pass_rate >= 99.5
+  <span class="k">on_fail:</span>
+    <span class="k">agent:</span> data-expectation-agent
+  <span class="k">day2:</span>
+    <span class="k">schedule:</span> every_run
+    <span class="k">alert:</span> dq-breach
+
+<span class="c"># agent assembles — a human still decides</span>
+<span class="k">- id:</span> <span class="v">NFR-05</span>
+  <span class="k">category:</span> <span class="v">B</span>
+  <span class="k">evidence:</span>
+    <span class="k">source:</span> agent
+    <span class="k">prompt:</span> >
+      Extract every declared failure mode from the
+      design pack. Cross-check against the deployed
+      topology. List what the topology has and the
+      documentation does not.</pre>
+    </div>
+    <div>
+<pre><span class="c"># manual — declared, owned, dated, expiring</span>
+<span class="k">- id:</span> <span class="v">REG-01</span>
+  <span class="k">title:</span> GxP impact assessment complete
+  <span class="k">category:</span> <span class="v">C</span>
+  <span class="k">severity:</span> <span class="v">blocker</span>
+  <span class="k">attestation:</span>
+    <span class="k">role:</span> quality-lead
+    <span class="k">requires:</span> [signature, date, document_link]
+    <span class="k">expires_after_days:</span> <span class="v">365</span>
+
+<span class="c"># the verdict — pure rules, no model</span>
+<span class="k">verdict:</span>
+  <span class="k">fail:</span>        any(blocker and status != pass)
+  <span class="k">conditional:</span> any(major   and status != pass)
+  <span class="k">pass:</span>        all(status == pass)
+  <span class="k">signature:</span>   <span class="v">required</span></pre>
+      <div class="box" style="margin-top:13px">
+        <b class="t">Why as code</b>
+        <ul class="tight">
+          <li>Reviewable, diffable, versioned — the bar itself has a change history</li>
+          <li>The team runs it locally; the gate runs the same file</li>
+          <li>Domains extend it by overlay without forking the core</li>
+          <li>The spec version is stamped into every evidence bundle</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BACKUP 3 — MANUAL & DEPLOYMENT ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup 3</span>
+    <h2>What stays manual, and what gets deployed</h2>
+    <span class="s">"Is anything still manual?" — yes, deliberately</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Deliberately not automated</b>
+      <ul class="none">
+        <li><b>The production-acceptance signature.</b> A model does not approve regulated change. It never will in this design.</li>
+        <li><b>Regulatory attestations</b> — GxP, DPIA. A qualified person's judgement, recorded with identity and date.</li>
+        <li><b>Business acceptance.</b> Fitness for purpose is not a technical property.</li>
+        <li><b>Category B judgements.</b> The agent assembles the evidence and states the risk; Ops decides whether to accept it.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Automated end to end</b>
+      <ul class="none">
+        <li>Evidence collection across all six platform services</li>
+        <li>Evaluation, verdict computation and the evidence bundle</li>
+        <li>Extraction of claims from unstructured handover documents</li>
+        <li>Drafting of missing tests, DQ rules, alert rules and runbook sections</li>
+        <li>Deployment of passing checks as day-2 monitors</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box tint">
+      <b class="t">Waiver policy — how "not applicable" stays honest</b>
+      <ul class="tight">
+        <li>A waiver requires a stated reason, a named approver and an expiry date</li>
+        <li>It is visible in the evidence bundle, not hidden in a config</li>
+        <li>It is re-tested at the next release — waivers do not accumulate silently</li>
+        <li>Waiver rate per domain is reported; a rising rate is a signal about the bar, not the projects</li>
+      </ul>
+    </div>
+    <div class="box tint">
+      <b class="t">Failure modes of the gate itself</b>
+      <ul class="tight">
+        <li><b>Evidence source unavailable</b> → check fails closed, never passes by absence</li>
+        <li><b>Agent extraction is wrong</b> → it only ever proposes; a deterministic rule or a human confirms</li>
+        <li><b>Gaming the thresholds</b> → coverage and DQ are sampled independently by Ops post-handover</li>
+        <li><b>Spec rot</b> → spec is versioned and owned; every bundle records the version it was judged against</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">Automating the assessment does not mean automating the accountability.</div>
+</section>
+
+<!-- ============ BACKUP 4 — VALUE ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup 4</span>
+    <h2>How we measure it, and how it spreads</h2>
+    <span class="s">Adoption and measurable reduction in production risk</span>
+  </div>
+
+  <div class="sect">
+    <h3>Measures</h3>
+    <div class="grid g4">
+      <div class="kpi"><b>% Cat&nbsp;A</b><span>Share of checks auto-verified — the maturity number</span></div>
+      <div class="kpi"><b>First-pass rate</b><span>Projects passing the gate at first submission</span></div>
+      <div class="kpi"><b>Shift-left ratio</b><span>Defects caught at the gate vs found in production</span></div>
+      <div class="kpi"><b>Cycle time</b><span>Handover elapsed time, days → hours</span></div>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Rollout</b>
+      <ul class="none">
+        <li><b>1 · Codify</b> — turn today's handover document into the versioned spec, as-is. No new bar yet.</li>
+        <li><b>2 · Shadow</b> — run it alongside the existing manual review; compare verdicts to calibrate.</li>
+        <li><b>3 · Shift left</b> — publish the self-check so teams run it during build, not at handover.</li>
+        <li><b>4 · Enforce</b> — the gate becomes the route to production; waivers by exception.</li>
+        <li><b>5 · Extend</b> — domain overlays; day-2 monitors from the same spec.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Why it becomes the reused pattern</b>
+      <ul class="none">
+        <li>It ships as a <b>skill</b> — adoptable without adopting our stack</li>
+        <li>It starts as <em>their</em> checklist codified, so adoption is not a negotiation</li>
+        <li>Security and enterprise architecture get their controls enforced automatically — they become sponsors, not blockers</li>
+        <li>The same spec powers Ops Self-Monitoring and feeds Self-Healing — one artefact, three capabilities</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">One spec. Codified once, enforced everywhere, and it keeps working after go-live.</div>
+</section>
+
+</body>
+</html>
