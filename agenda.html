@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agenda</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:1180px;margin:22px auto;background:#fff;padding:34px 40px 30px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12);
+  }
+
+  header{border-bottom:2px solid var(--navy);padding-bottom:14px;margin-bottom:20px}
+  h1{margin:0;font-size:clamp(28px,3.2vw,42px);font-weight:800;letter-spacing:-.025em;color:var(--navy)}
+  .sub{margin:7px 0 0;font-size:clamp(13px,1.4vw,17px);font-weight:600;color:var(--teal)}
+
+  .arc{margin-bottom:15px}
+  .arclbl{
+    display:flex;align-items:center;gap:10px;margin-bottom:7px;
+    font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)
+  }
+  .arclbl::after{content:"";flex:1;height:1px;background:var(--line)}
+  .arclbl .q{font-size:10px;font-weight:700;letter-spacing:.02em;text-transform:none;color:#8B98A8}
+
+  .item{
+    display:grid;grid-template-columns:44px 1fr 62px;gap:15px;align-items:center;
+    border:1px solid var(--line);border-left-width:4px;border-radius:10px;
+    padding:11px 15px;margin-bottom:7px;background:#fff
+  }
+  .item .n{
+    width:30px;height:30px;border-radius:8px;display:grid;place-items:center;
+    font-size:14px;font-weight:800;color:#fff;background:var(--navy)
+  }
+  .item b{display:block;font-size:16.5px;font-weight:800;letter-spacing:-.015em;line-height:1.25}
+  .item span{display:block;margin-top:2px;font-size:12.5px;line-height:1.45;color:var(--mute)}
+  .item .t{
+    font-size:12px;font-weight:800;color:var(--mute);text-align:right;
+    font-variant-numeric:tabular-nums;white-space:nowrap
+  }
+
+  .a1{border-left-color:var(--teal)}  .a1 .n{background:var(--teal)}
+  .a2{border-left-color:var(--navy)}  .a2 .n{background:var(--navy)}
+  .a3{border-left-color:var(--agent)} .a3 .n{background:var(--agent)}
+  .a4{border-left-color:var(--amber)} .a4 .n{background:var(--amber)}
+
+  .item.demo{background:#F1F8F6;border-color:#BFDED6;border-left-color:var(--teal)}
+  .item.demo b::after{
+    content:"LIVE";margin-left:9px;font-size:9.5px;font-weight:800;letter-spacing:.09em;
+    background:var(--teal);color:#fff;border-radius:4px;padding:2px 6px;vertical-align:middle
+  }
+
+  footer{
+    margin-top:20px;border-top:2px solid var(--navy);padding-top:14px;text-align:center
+  }
+  footer p{margin:0;font-size:clamp(14px,1.5vw,19px);font-weight:800;color:var(--navy);letter-spacing:-.015em}
+  footer span{display:block;margin-top:5px;font-size:12.5px;font-weight:600;color:var(--mute)}
+
+  @media print{
+    @page{size:landscape;margin:9mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <h1>Agenda</h1>
+    <p class="sub">Build once. Reuse everywhere. Deterministic by default, agentic by exception.</p>
+  </header>
+
+  <div class="arc">
+    <div class="arclbl"><span>Prove</span><span class="q">something real, already running</span></div>
+
+    <div class="item a1">
+      <span class="n">1</span>
+      <div>
+        <b>Cost Agent — Architecture &amp; Design</b>
+        <span>Where it sits on the platform, what is deterministic, where a model earns its place</span>
+      </div>
+      <span class="t">5 min</span>
+    </div>
+
+    <div class="item a1 demo">
+      <span class="n">2</span>
+      <div>
+        <b>Cost Agent — Demo</b>
+        <span>A real workload, real findings, and the number it moved</span>
+      </div>
+      <span class="t">7 min</span>
+    </div>
+  </div>
+
+  <div class="arc">
+    <div class="arclbl"><span>Frame</span><span class="q">the system it belongs to</span></div>
+
+    <div class="item a2">
+      <span class="n">3</span>
+      <div>
+        <b>North Star Data &amp; AI Platform</b>
+        <span>The reference architecture — lakehouse foundation, reusable platform services, one control plane</span>
+      </div>
+      <span class="t">5 min</span>
+    </div>
+
+    <div class="item a2">
+      <span class="n">4</span>
+      <div>
+        <b>Driving Principles</b>
+        <span>Think · Compose · Execute · Operate &amp; Assure — the rules that decide every design call</span>
+      </div>
+      <span class="t">4 min</span>
+    </div>
+
+    <div class="item a2">
+      <span class="n">5</span>
+      <div>
+        <b>Design Patterns</b>
+        <span>Checklist as code · base-agent composition · deterministic gate with agentic comprehension · evidence by construction</span>
+      </div>
+      <span class="t">5 min</span>
+    </div>
+  </div>
+
+  <div class="arc">
+    <div class="arclbl"><span>Apply</span><span class="q">the patterns, in production</span></div>
+
+    <div class="item a3">
+      <span class="n">6</span>
+      <div>
+        <b>Ops Gate Agent</b>
+        <span>Readiness assurance before Ops accepts a project — evidence, not a document review</span>
+      </div>
+      <span class="t">8 min</span>
+    </div>
+
+    <div class="item a3">
+      <span class="n">7</span>
+      <div>
+        <b>Ops Self-Monitoring &amp; Self-Healing Agent</b>
+        <span>Day 2: detect, reproduce in a sandbox, fix, prove, deploy, roll back — bounded by action class</span>
+      </div>
+      <span class="t">7 min</span>
+    </div>
+  </div>
+
+  <div class="arc">
+    <div class="arclbl"><span>Close</span><span class="q">what is built, and what I would own here</span></div>
+
+    <div class="item a4">
+      <span class="n">8</span>
+      <div>
+        <b>Conclusion</b>
+        <span>What is running today, what comes next, and where this becomes a reusable standard</span>
+      </div>
+      <span class="t">4 min</span>
+    </div>
+  </div>
+
+  <footer>
+    <p>One platform, one set of principles, one reusable spec — applied three ways.</p>
+    <span>45 minutes · backup detail available for any section</span>
+  </footer>
+
+</div>
+</body>
+</html>
