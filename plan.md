@@ -92,11 +92,29 @@ this one is explicitly designed so the agent *doesn't*.
 | **T2** Assurance & regulatory | Ops Gate Agent as the assurance bar; deterministic control plane | The checklist artefact itself; measurable reduction in production risk / rework |
 | **T3** Stakeholders & reuse | Base → composite agent tiering; Ops Gate shipped as a skill | Named adopters / audiences; mentoring evidence |
 
+## Build repository
+
+Code lives in a separate repo: **DataPlatformSuite** — https://github.com/basantchoudhary/DataPlatformSuite
+
+One repo, not several. The base agents and Ops Gate share one contract (the check
+spec), so splitting them buys version skew and nothing else — and the thesis is
+composability, which five repositories would contradict. Each agent is a package
+depending only on `contracts/`, so the monorepo is a convenience rather than a
+coupling: any agent could be extracted without unpicking imports. **Repo strategy
+is not the same thing as module boundaries** — worth saying explicitly if asked.
+
+Working today: `python3 -m opsgate check --target examples/sample_project` runs a
+real 19-check assessment with zero dependencies, produces a signed evidence
+bundle, drafts the missing artefacts via the base agents, and emits day-2
+monitors. 21 tests pass.
+
 ## Open items
 
-1. Add the North Star PNG to `architecture/`.
+1. ~~Add the North Star PNG to `architecture/`.~~ done
 2. CostAgent slides + demo script + fallback recording.
-3. Ops Gate Agent design doc — checklist contents, deterministic/agentic split, skill packaging.
-4. Design docs for the four base agents and the interfaces the composites consume.
-5. **Evidence bank**: for each theme, real GSK engagements with named adopters and a number.
-6. Confirm interview format — how long, who is on the panel, is live demo permitted.
+3. ~~Ops Gate Agent design doc.~~ done — `agents/ops-gate/ops-gate-design.html`
+4. ~~Minimal Ops Gate implementation.~~ done — DataPlatformSuite
+5. Design docs for the four base agents (implementations exist; the *design*
+   narrative for each still needs writing).
+6. **Evidence bank**: for each theme, real GSK engagements with named adopters and a number.
+7. Confirm interview format — how long, who is on the panel, is live demo permitted.
