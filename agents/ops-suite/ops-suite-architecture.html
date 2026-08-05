@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ops Suite — Detailed Architecture</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12);
+  }
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:18px}
+  .ph .k{
+    font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none
+  }
+  .ph .k.bk{background:var(--mute)}
+  .ph h2{margin:0;font-size:clamp(19px,2.1vw,26px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+
+  h3{margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr} .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)}
+  .sect{margin-bottom:17px}
+
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px} ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0} ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+
+  /* ---- loop diagram ---- */
+  .lane{border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-bottom:11px}
+  .lane .lh{
+    padding:6px 13px;font-size:10.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;
+    color:#fff;display:flex;justify-content:space-between;background:var(--teal)
+  }
+  .lane.act .lh{background:var(--navy)}
+  .lane .lh em{font-style:normal;font-weight:700;letter-spacing:.02em;text-transform:none;opacity:.92}
+
+  .entry{display:flex;align-items:stretch;padding:11px 12px}
+  .st{
+    flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;
+    text-align:center;display:flex;flex-direction:column;justify-content:center
+  }
+  .st b{font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  .st small{display:block;margin-top:2px;font-size:10.5px;line-height:1.35;color:var(--mute)}
+  .st.ok{background:#F1F8F6;border-color:#BFDED6} .st.ok b{color:var(--teal)}
+  .st.prod{background:#EEF3FA;border-color:#B9CDE8}
+  .ar{display:grid;place-items:center;color:#9AA8B8;font-size:14px;padding:0 7px;flex:none}
+
+  .lgrid{display:grid;grid-template-columns:1fr 18px 1fr 18px 1fr 18px 1fr 18px 1fr;padding:11px 12px 0}
+  .l7{
+    display:grid;padding:11px 12px 0;
+    grid-template-columns:1fr 13px 1fr 13px 1fr 13px 1fr 13px 1fr 13px 1fr 13px 1.05fr
+  }
+  .l7 .node{padding:8px 5px}
+  .l7 .node b{font-size:11.5px;line-height:1.2}
+  .l7 .node small{font-size:9.5px;margin-top:2px}
+  .l7 .ar{padding:0 2px;font-size:12px}
+  .tagm.amb{background:var(--amber)!important}
+
+  /* base agent foundation band */
+  .fan4{display:grid;grid-template-columns:1fr 1fr 2.1fr;height:13px;padding:0 12px;gap:8px}
+  .bgrid{display:grid;grid-template-columns:1fr 1fr 2.1fr;gap:8px;padding:0 12px}
+  .bcard.wide{border-color:var(--teal);background:#E4F2EE}
+  .bcard .reuse{
+    display:inline-block;margin-left:6px;font-size:8.5px;font-weight:800;letter-spacing:.05em;
+    text-transform:uppercase;background:var(--teal);color:#fff;border-radius:3px;padding:1px 5px;
+    vertical-align:middle
+  }
+  .subs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+  .sub{background:#fff;border:1px solid #C9DED9;border-radius:6px;padding:5px 7px}
+  .sub b{font-size:10px;font-weight:800;color:#0B5F53;display:block;line-height:1.2}
+  .sub span{display:block;font-size:9px;color:var(--mute);font-weight:600;margin-top:1px}
+  .bcard{border:1px solid #9FC9BF;background:#EDF6F3;border-radius:8px;padding:8px 9px}
+  .bcard b{display:block;font-size:11.5px;font-weight:800;color:#0B5F53;line-height:1.25}
+  .bcard em{display:block;font-style:normal;font-size:9.5px;color:#3F7A6F;font-weight:700;margin-top:2px}
+  .bcard .tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:3px}
+  .bcard .tg{
+    font-size:8.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;background:#fff;
+    border:1px solid #C9DED9;border-radius:3px;padding:1px 4px;color:#3F7A6F
+  }
+  .bandlbl{
+    padding:9px 12px 5px;font-size:10px;font-weight:800;letter-spacing:.11em;
+    text-transform:uppercase;color:var(--mute)
+  }
+  .node{border-radius:8px;padding:9px 8px;text-align:center;border:1px solid var(--line);background:#fff}
+  .node b{display:block;font-size:12.5px;font-weight:800;letter-spacing:.01em}
+  .node small{display:block;margin-top:2px;font-size:10px;line-height:1.35;color:var(--mute)}
+  .node .tagm{
+    display:inline-block;margin-top:5px;font-size:9px;font-weight:800;letter-spacing:.08em;
+    text-transform:uppercase;border-radius:4px;padding:1px 6px;color:#fff
+  }
+  .node.det{background:#EEF3FA;border-color:#B9CDE8} .node.det b{color:var(--navy)} .node.det .tagm{background:var(--navy)}
+  .node.agt{background:#F4EFFB;border-color:#DDCCF0} .node.agt b{color:var(--agent)} .node.agt .tagm{background:var(--agent)}
+
+  .branch{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:11px 12px 0}
+  .out{border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:9px}
+  .out.good{background:#F1F8F6;border:1px solid #BFDED6;color:#0B5F53}
+  .out.bad{background:#FCF3F2;border:1px solid #E8C4C0;color:var(--red)}
+
+  .drop{display:grid;grid-template-columns:1fr 18px 1fr 18px 1fr 18px 1fr 18px 1fr;height:14px;padding:0 12px;margin-top:11px}
+  .vl{width:0;justify-self:center;border-left:2px solid var(--teal);height:100%}
+  .vl.dash{border-left-style:dashed;border-left-color:#9FC4BB}
+  .spine{
+    margin:0 12px;border:1px solid var(--teal);background:#E9F4F1;border-radius:9px;
+    padding:8px 13px;display:flex;align-items:center;justify-content:center;gap:12px;text-align:center
+  }
+  .spine b{font-size:13.5px;font-weight:800;color:#0B5F53;letter-spacing:-.01em}
+  .spine small{font-size:11px;color:#3F7A6F;font-weight:600}
+  .lgd{padding:9px 12px 11px;font-size:10.5px;color:var(--mute);font-weight:600;text-align:center}
+
+  /* ---- action class ladder ---- */
+  .ladder{display:flex;flex-direction:column;gap:7px}
+  .rung{display:grid;grid-template-columns:64px 1fr 128px 1fr;gap:11px;align-items:center;
+    border:1px solid var(--line);border-left-width:5px;border-radius:9px;padding:9px 12px}
+  .rung .cls{font-size:12px;font-weight:800;letter-spacing:.02em}
+  .rung .nm{font-size:13.5px;font-weight:800;letter-spacing:-.01em}
+  .rung .nm small{display:block;font-weight:600;font-size:11.5px;color:var(--mute);margin-top:1px}
+  .rung .who{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;text-align:center;
+    border-radius:5px;padding:4px 6px;color:#fff}
+  .rung .ex{font-size:11.5px;color:var(--mute);line-height:1.45}
+  .r0{border-left-color:#5C6B7F} .r0 .cls,.r0 .nm{color:#5C6B7F} .r0 .who{background:#5C6B7F}
+  .r1{border-left-color:var(--teal)} .r1 .cls,.r1 .nm{color:var(--teal)} .r1 .who{background:var(--teal)}
+  .r2{border-left-color:var(--amber)} .r2 .cls,.r2 .nm{color:var(--amber)} .r2 .who{background:var(--amber)}
+  .r3{border-left-color:var(--red)} .r3 .cls,.r3 .nm{color:var(--red)} .r3 .who{background:var(--red)}
+
+  /* ---- split ---- */
+  .sp{border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+  .sp h4{margin:0 0 6px;font-size:13.5px;font-weight:800}
+  .sp p{margin:0;font-size:12.5px;line-height:1.55;color:#44536A}
+  .sp.d{background:#EEF3FA;border-color:#C6D6EC} .sp.d h4{color:var(--navy)}
+  .sp.a{background:#F4EFFB;border-color:#DDCCF0} .sp.a h4{color:var(--agent)}
+  .sp.h{background:#FBF5E9;border-color:#E4CE9E} .sp.h h4{color:var(--amber)}
+
+  /* ---- trace ---- */
+  .trace{border-left:2px solid var(--line);margin-left:8px;padding-left:0}
+  .tr{position:relative;padding:0 0 13px 22px}
+  .tr::before{
+    content:"";position:absolute;left:-7px;top:4px;width:12px;height:12px;border-radius:50%;
+    background:#fff;border:2px solid var(--navy)
+  }
+  .tr.agt::before{border-color:var(--agent)} .tr.good::before{border-color:var(--teal);background:var(--teal)}
+  .tr .tt{font-size:11px;font-weight:800;color:var(--mute);font-family:ui-monospace,Menlo,monospace}
+  .tr b{display:block;font-size:13px;font-weight:800;margin-top:1px}
+  .tr p{margin:2px 0 0;font-size:12.5px;line-height:1.5;color:#44536A}
+  .tr code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--panel);
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:7px 9px;background:var(--navy);color:#fff;font-size:10.5px;
+    font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+  td{padding:7px 9px;border-bottom:1px solid var(--line);color:#33445A;vertical-align:top}
+  tr:nth-child(even) td{background:#FAFCFD}
+
+  .kpi{text-align:center;border:1px solid var(--line);border-radius:10px;padding:13px 10px;background:var(--panel)}
+  .kpi b{display:block;font-size:21px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+  .kpi span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute);font-weight:600}
+
+  .foot{margin-top:16px;border-top:2px solid var(--navy);padding-top:11px;
+    font-size:13.5px;font-weight:800;color:var(--navy);text-align:center}
+  .foot span{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--mute)}
+
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+  }
+
+  .grp2 td { background:#efeaff !important; font-weight:700; color:#4a3c78;
+             text-transform:uppercase; letter-spacing:.04em; font-size:11px !important; }
+  tr.hi td { background:#FBF5E9 !important; }
+  pre{margin:0;background:#101B2B;color:#D7E3F2;border-radius:9px;padding:13px 15px;
+    font:500 11px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
+  pre .c{color:#7C90AA}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--panel);
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+  td b{color:var(--navy)}
+  h3{margin:0 0 10px;font-size:11px;font-weight:800;letter-spacing:.12em;
+     text-transform:uppercase;color:var(--mute)}
+</style>
+</head>
+<body>
+
+<!-- ===================== 1 · THE SUITE ===================== -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Architecture 1</span>
+    <h2>Ops Suite — the whole system</h2>
+    <span class="s">Four capabilities · three base agents · one shared spine</span>
+  </div>
+
+  <div class="sect">
+    <div class="lane">
+      <div class="lh"><span>Who it serves</span><em>and what they get from it</em></div>
+      <div class="entry">
+        <div class="st"><b>Project teams</b><small>self-check during build, no surprises at handover</small></div>
+        <div class="ar">·</div>
+        <div class="st"><b>Ops engineers</b><small>evidence instead of documents; fewer 3am unknowns</small></div>
+        <div class="ar">·</div>
+        <div class="st"><b>Enterprise architecture &amp; security</b><small>controls enforced, not requested</small></div>
+        <div class="ar">·</div>
+        <div class="st"><b>Quality &amp; audit</b><small>a reproducible record, produced as a by-product</small></div>
+      </div>
+    </div>
+
+    <div class="lane act">
+      <div class="lh"><span>Composite capabilities</span><em>each one composed, none built from scratch</em></div>
+      <div class="l7" style="grid-template-columns:1fr 13px 1fr 13px 1fr 13px 1fr">
+        <div class="node det"><b>Ops Gate</b><small>readiness before Ops accepts a project</small><span class="tagm">Built</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Self-Monitoring</b><small>the gate's checks, still running</small><span class="tagm">Designed</span></div>
+        <div class="ar">→</div>
+        <div class="node det"><b>Self-Healing</b><small>known faults, bounded action</small><span class="tagm">Designed</span></div>
+        <div class="ar">→</div>
+        <div class="node agt"><b>L2 Resolver</b><small>unknown faults, advisory only</small><span class="tagm">Designed</span></div>
+      </div>
+
+      <div class="bandlbl">Base agents — every capability above is assembled from these three</div>
+      <div class="fan4">
+        <div class="vl"></div><div class="vl"></div><div class="vl"></div>
+      </div>
+      <div class="bgrid">
+        <div class="bcard">
+          <b>Sandbox Creator</b><em>code · config · data</em>
+          <div class="tags"><span class="tg">Prove rollback</span><span class="tg">Reproduce</span><span class="tg">Dry-run</span></div>
+        </div>
+        <div class="bcard">
+          <b>Reverse Engineer IaC</b><em>CI/CD for code, platform, config</em>
+          <div class="tags"><span class="tg">Drift</span><span class="tg">Topology</span><span class="tg">Failure points</span></div>
+        </div>
+        <div class="bcard wide">
+          <b>Regression Agent — functional &amp; non-functional <span class="reuse">one agent, four consumers</span></b>
+          <div class="subs">
+            <div class="sub"><b>Test Harness Creator</b><span>suites · coverage · regression</span></div>
+            <div class="sub"><b>Data Expectation Service</b><span>quality · profiling · reconciliation</span></div>
+          </div>
+          <div class="tags"><span class="tg">Gate</span><span class="tg">Monitor</span><span class="tg">Validate fix</span></div>
+        </div>
+      </div>
+
+      <div class="fan4" style="margin-top:9px"><div class="vl"></div><div class="vl"></div><div class="vl"></div></div>
+      <div class="spine">
+        <b>Shared spine — Knowledge &middot; Evidence &middot; Contracts</b>
+        <small>checks · policy · runbooks · past resolutions &nbsp;|&nbsp; every capability reads and writes here</small>
+      </div>
+
+      <div class="lgd">
+        Nothing above the spine owns a rule. Rules live once, in versioned code, and are consumed by the
+        gate, the monitors, the healer and the resolver alike.
+      </div>
+    </div>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="box tint"><b class="t">One spec, four consumers</b><p class="n">The checks that gate a release <em>become</em> the day-2 monitors, the validation after a heal, and the bar a hotfix must clear. There is no second checklist to drift.</p></div>
+    <div class="box tint"><b class="t">One evidence shape</b><p class="n">Gate verdicts, heal records and L2 resolutions all emit the same bundle: what was checked, what was observed, who signed. One audit story, not three.</p></div>
+    <div class="box tint"><b class="t">Composed, not duplicated</b><p class="n">Three base agents serve four capabilities. The Regression Agent that proves a hotfix is the same one that gated the release — so a fix cannot pass a lower bar.</p></div>
+  </div>
+
+  <div class="foot">
+    Four capabilities, but one artefact and one set of agents underneath.
+    <span>That is the difference between a suite and four products that happen to share a name.</span>
+  </div>
+</section>
+
+<!-- ===================== 2 · COMPONENTS ===================== -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Architecture 2</span>
+    <h2>Component inventory</h2>
+    <span class="s">Every part, its kind, and what exists today</span>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th style="width:19%">Component</th><th style="width:9%">Kind</th>
+      <th style="width:37%">Responsibility</th><th style="width:20%">Depends on</th><th style="width:15%">Status</th>
+    </tr></thead>
+    <tbody>
+      <tr class="grp2"><td colspan="5">Shared spine</td></tr>
+      <tr><td><b>Check spec</b></td><td>Versioned data</td><td>The bar, as code. Checks, categories, severities, thresholds, day-2 schedules</td><td>Git</td><td><b>Built</b> — <code>specs/base.yaml</code></td></tr>
+      <tr><td><b>Policy spec</b></td><td>Versioned data</td><td>Action classes, bounds, guardrails, runbook bindings</td><td>Git</td><td><b>Built</b> — <code>policy.sample.yaml</code></td></tr>
+      <tr><td><b>Contracts</b></td><td>Library</td><td>Shared types — Check, Evidence, Result, Verdict. Every package depends on this and on nothing else of ours</td><td>—</td><td><b>Built</b> — <code>contracts/</code></td></tr>
+      <tr><td><b>Evidence store</b></td><td>Store</td><td>Immutable, versioned bundles for gate, heal and resolution events</td><td>Object store + catalog</td><td>Local JSON today</td></tr>
+      <tr><td><b>Knowledge store</b></td><td>Store</td><td>Runbooks, past resolutions, derived topology</td><td>Graph or index</td><td>Designed</td></tr>
+
+      <tr class="grp2"><td colspan="5">Base agents</td></tr>
+      <tr><td><b>Sandbox Creator</b></td><td>Agent + compute</td><td>Disposable code/config/data replica. Executes rollback, clean deploy, dry-runs and reproductions</td><td>Contracts, compute</td><td><b>Built</b></td></tr>
+      <tr><td><b>Reverse Engineer IaC</b></td><td>Agent</td><td>Recovers topology from deployed state, diffs against declared, derives failure points</td><td>Contracts</td><td><b>Built</b></td></tr>
+      <tr><td><b>Test Harness Creator</b></td><td>Agent</td><td>Harness results, untested modules, scaffold generation</td><td>Contracts</td><td><b>Built</b></td></tr>
+      <tr><td><b>Data Expectation Service</b></td><td>Agent</td><td>Profiling, expectations, reconciliation; proposes rules where none exist</td><td>Contracts</td><td><b>Built</b></td></tr>
+
+      <tr class="grp2"><td colspan="5">Ops Gate</td></tr>
+      <tr><td><b>Spec loader</b></td><td>Library</td><td>Parse and validate the spec. Rejects a category-A check with no rule at load time</td><td>Contracts</td><td><b>Built</b></td></tr>
+      <tr><td><b>Rule evaluator</b></td><td>Library</td><td>Safe AST evaluation. Rules are data, never executable</td><td>—</td><td><b>Built</b></td></tr>
+      <tr><td><b>Collectors</b></td><td>Adapters</td><td>Ten adapters onto platform services and base agents. Fail closed</td><td>Base agents, platform</td><td><b>Built</b></td></tr>
+      <tr><td><b>Gate engine</b></td><td>Library</td><td>Evaluates evidence, computes the verdict deterministically</td><td>Evaluator, collectors</td><td><b>Built</b></td></tr>
+      <tr><td><b>Remediation</b></td><td>Library</td><td>Routes failing checks to base agents; writes proposals, applies nothing</td><td>Base agents</td><td><b>Built</b></td></tr>
+      <tr><td><b>Bundle &amp; signature</b></td><td>Library</td><td>Builds the audit record; refuses to sign a failing gate as accepted</td><td>Contracts</td><td><b>Built</b></td></tr>
+      <tr><td><b>Day-2 emitter</b></td><td>Library</td><td>Turns passing checks into monitor definitions</td><td>Spec, bundle</td><td><b>Built</b></td></tr>
+      <tr><td><b>Gate CLI / CI action</b></td><td>Service</td><td>The route to production. Exit 0/1/2 gates the pipeline</td><td>All of the above</td><td><b>Built</b></td></tr>
+
+      <tr class="grp2"><td colspan="5">Self-Monitoring &amp; Self-Healing</td></tr>
+      <tr><td><b>Monitor runner</b></td><td>Service</td><td>Executes day-2 monitors on schedule using the <em>same</em> evaluator as the gate</td><td>Evaluator, collectors</td><td>Designed</td></tr>
+      <tr><td><b>Diagnosis agent</b></td><td>Agent</td><td>Correlates telemetry, changes and topology into a hypothesis. The one agentic step</td><td>Knowledge, IaC agent</td><td>Designed</td></tr>
+      <tr><td><b>Policy engine</b></td><td>Library</td><td>Resolves action class, checks bounds, guardrails, freeze windows</td><td>Policy spec</td><td>Designed</td></tr>
+      <tr><td><b>Remediation executor</b></td><td>Service</td><td>Runs the bound runbook action; dry-runs class 2 in a sandbox first</td><td>Sandbox, policy</td><td>Designed</td></tr>
+      <tr><td><b>Validator</b></td><td>Library</td><td>Re-runs the failing check; auto-reverts if it does not pass</td><td>Evaluator</td><td>Designed</td></tr>
+      <tr><td><b>Learning proposer</b></td><td>Agent</td><td>Drafts new checks, thresholds and runbooks. Proposals only</td><td>Knowledge</td><td>Designed</td></tr>
+
+      <tr class="grp2"><td colspan="5">L2 Resolver</td></tr>
+      <tr><td><b>Intake &amp; enrichment</b></td><td>Service</td><td>Assembles context — runs, logs, recent changes, owner, topology</td><td>Platform, IaC agent</td><td>Designed</td></tr>
+      <tr><td><b>Prior-incident matcher</b></td><td>Agent</td><td>Has this happened before? Ranked, with resolutions</td><td>Knowledge store</td><td>Prototyped</td></tr>
+      <tr><td><b>Investigator</b></td><td>Agent</td><td>Reproduces in a sandbox, forms and evidences a hypothesis</td><td>Sandbox</td><td>Designed</td></tr>
+      <tr><td><b>Proposal builder</b></td><td>Agent</td><td>Drafts the fix and proves it with the Regression Agent. Executes nothing</td><td>Regression Agent</td><td>Designed</td></tr>
+    </tbody>
+  </table>
+
+  <div class="foot">
+    Twenty-six components; fifteen already exist as working code.
+    <span>Everything marked <em>designed</em> reuses components that are already built — which is why the remaining build is additive rather than foundational.</span>
+  </div>
+</section>
+
+
+<!-- ===================== 3 · LIFECYCLE ===================== -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Architecture 3</span>
+    <h2>The lifecycle — one closed loop</h2>
+    <span class="s">Build → gate → run → detect → heal → escalate → learn → back to the spec</span>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th style="width:5%">#</th><th style="width:16%">Stage</th><th style="width:15%">Capability</th>
+      <th style="width:34%">What happens</th><th style="width:30%">Artefact produced</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>1</td><td><b>Build</b></td><td>Ops Gate (self-check)</td><td>The team runs the identical gate locally during development</td><td>Local verdict — no bundle</td></tr>
+      <tr><td>2</td><td><b>Handover request</b></td><td>Ops Gate</td><td>Collectors gather evidence; the engine evaluates; base agents draft what is missing</td><td><b>Evidence bundle</b> + remediation proposals</td></tr>
+      <tr><td>3</td><td><b>Acceptance</b></td><td>Human</td><td>A named person reviews evidence and signs. A failing gate cannot be signed as accepted</td><td>Signed bundle</td></tr>
+      <tr><td>4</td><td><b>Go-live</b></td><td>Day-2 emitter</td><td>Passing checks with a <code>day2:</code> block deploy as monitors. Failing ones do not</td><td><b>Monitor manifest</b></td></tr>
+      <tr><td>5</td><td><b>Steady state</b></td><td>Self-Monitoring</td><td>The same rules run on schedule against live evidence</td><td>Monitor results, telemetry</td></tr>
+      <tr class="hi"><td>6</td><td><b>Breach</b></td><td>Self-Healing</td><td>Diagnose → resolve action class → dry-run if class 2 → remediate → <b>re-run the failing check</b></td><td><b>Heal record</b> (same bundle shape)</td></tr>
+      <tr><td>7a</td><td><b>Validated</b></td><td>Self-Healing</td><td>Check passes. Resolved, recorded, back to steady state</td><td>Closed heal record</td></tr>
+      <tr class="hi"><td>7b</td><td><b>Not validated, or no runbook</b></td><td>→ <b>L2 Resolver</b></td><td>Auto-revert, then escalate with everything already gathered</td><td>Investigation context</td></tr>
+      <tr><td>8</td><td><b>Investigation</b></td><td>L2 Resolver</td><td>Reproduce in sandbox → diagnose → propose and prove a fix. <b>No reproduction, no fix proposal</b></td><td>Evidence pack + proven fix</td></tr>
+      <tr><td>9</td><td><b>Fix</b></td><td>Human + CI</td><td>Engineer applies it through the project's own pipeline; the Regression Agent verifies</td><td>Resolution record</td></tr>
+      <tr class="hi"><td>10</td><td><b>Learn</b></td><td>Learning proposer</td><td>Drafts a new check, threshold or runbook so the next occurrence is automatic — or prevented at the gate</td><td><b>Proposed spec change</b></td></tr>
+      <tr><td>11</td><td><b>Ratify</b></td><td>Human</td><td>A person accepts it into the versioned spec. The spec is only ever changed deliberately</td><td>New spec version</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sect grid g3" style="margin-top:16px">
+    <div class="box tint"><b class="t">Where the loop closes</b><p class="n">Step 10 feeds step 1. Every unknown fault L2 resolves becomes a known one — handled automatically next time, or prevented at the gate. Production teaches the checklist; a human ratifies it.</p></div>
+    <div class="box tint"><b class="t">Where it escalates</b><p class="n">Two doors into L2: no runbook exists, or the runbook ran and validation failed. Both arrive with context already assembled, which is the point.</p></div>
+    <div class="box tint"><b class="t">Where humans are mandatory</b><p class="n">Steps 3, 9 and 11 — acceptance, applying a fix, and changing the bar. None of the three is ever automated, at any maturity level.</p></div>
+  </div>
+
+  <div class="foot">
+    Eleven stages, three of them human, and every one of them producing a durable record.
+    <span>The audit trail is not a feature bolted on — it is what the system emits as it works.</span>
+  </div>
+</section>
+
+<!-- ===================== 4 · INTERFACES ===================== -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Architecture 4</span>
+    <h2>Interfaces between components</h2>
+    <span class="s">The artefacts that cross boundaries — the real contract surface</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+<pre><span class="c">// CheckSpec — Git, versioned, the single source of truth</span>
+{ spec_version, domain, owner,
+  checks: [ { id, title, category: A|B|C|D, severity,
+              evidence: { source, mode? }, rule?,
+              on_fail: { agent }, day2: { schedule, alert },
+              attestation?, waiver? } ],
+  verdict: { fail, conditional, pass, signature } }
+
+<span class="c">// Evidence — what a collector returns. Absence is failure.</span>
+{ values: {...}, available: bool, detail }
+
+<span class="c">// EvidenceBundle — emitted by Gate, Heal AND Resolve</span>
+{ bundle_version, generated_at, target,
+  spec: { version, domain, owner },
+  summary: { total, by_status, automation_pct },
+  verdict: { outcome, reasons },
+  results: [ { id, category, status, observed, message,
+               remediation } ],
+  signature: null | { name, role, decision, signed_at } }</pre>
+    </div>
+    <div>
+<pre><span class="c">// Day2Manifest — gate output becomes monitoring input</span>
+{ generated_from, spec_version,
+  monitors:      [ { id, source, rule, schedule, alert } ],
+  not_deployed:  [ id ]        <span class="c">// failed the gate</span>
+}
+
+<span class="c">// HealRecord — the same bundle shape, plus</span>
+{ trigger: { monitor_id, observed },
+  diagnosis: { hypothesis, confidence, evidence[] },
+  action: { class, name, bounds_ok, dry_run },
+  validation: { check_id, passed, reverted },
+  policy_version }
+
+<span class="c">// InvestigationContext — Heal → L2 handover</span>
+{ incident, failed_check, attempted_action,
+  telemetry_window, topology, recent_changes,
+  prior_incidents[] }
+
+<span class="c">// Base-agent returns — stable, small, testable</span>
+DriftReport      { resources_differing, missing, unmanaged, changed[] }
+SandboxResult    { executed, succeeded, duration_s, output }
+RegressionResult { suites_failed, coverage_pct, dq_pass_rate,
+                   variance_pct }</pre>
+    </div>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="box"><b class="t">Why one bundle shape</b><p class="n">Gate, heal and resolve emit the same structure. Auditors learn one artefact; tooling parses one schema; and a question like <em>"show me everything that changed this workload this quarter"</em> is one query rather than three integrations.</p></div>
+    <div class="box"><b class="t">Why base agents return data, not objects</b><p class="n">Small JSON-serialisable returns keep the agents independently testable, recordable for replay, and swappable without touching the consumers.</p></div>
+    <div class="box"><b class="t">Why the spec is the only shared mutable</b><p class="n">Every other artefact is append-only. One thing changes deliberately and under review; everything else accumulates. That is what makes the system reconstructable.</p></div>
+  </div>
+
+  <div class="foot">
+    Six artefacts is the entire integration surface of the suite.
+    <span>Components are replaceable precisely because the things that cross between them are this small.</span>
+  </div>
+</section>
+
+
+<!-- ===================== 5 · DEPLOYMENT & DATA ===================== -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Architecture 5</span>
+    <h2>Deployment topology and where data lives</h2>
+    <span class="s">Control plane · execution plane · systems of record</span>
+  </div>
+
+  <div class="sect">
+    <div class="lane">
+      <div class="lh"><span>Three planes</span><em>the suite holds no workload data of its own</em></div>
+      <div class="entry">
+        <div class="st ok"><b>Control plane</b><small>spec, policy, verdicts, schedules — small, versioned, central</small></div>
+        <div class="ar">→</div>
+        <div class="st"><b>Execution plane</b><small>collectors, sandboxes, remediation — runs beside the workload</small></div>
+        <div class="ar">→</div>
+        <div class="st prod"><b>Systems of record</b><small>ServiceNow, catalog, observability, object store</small></div>
+      </div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th style="width:20%">What</th><th style="width:14%">Plane</th>
+      <th style="width:26%">Stored in</th><th style="width:22%">Retention</th><th style="width:18%">Why there</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><b>Check spec, policy</b></td><td>Control</td><td><b>Git</b> + release artefact</td><td>Forever, semver</td><td>Reviewable, diffable, the bar has a history</td></tr>
+      <tr><td><b>Evidence bundles</b></td><td>Control</td><td>Object store, write-once + catalog index</td><td>Regulatory period</td><td>Immutable audit record</td></tr>
+      <tr><td><b>Monitor manifests</b></td><td>Control</td><td>Config store, per workload</td><td>Current + history</td><td>Derived from the gate; regenerable</td></tr>
+      <tr><td><b>Heal &amp; resolution records</b></td><td>Control</td><td>Same store as bundles</td><td>Regulatory period</td><td>One artefact family, one query</td></tr>
+      <tr><td><b>Runbooks, past resolutions</b></td><td>Control</td><td>Git (runbooks) + index/graph (resolutions)</td><td>Long</td><td>Procedural memory belongs in review, not a database</td></tr>
+      <tr><td><b>Recovered topology</b></td><td>Execution</td><td>Cache, rebuilt on demand</td><td>Hours</td><td>Derived — never a source of truth</td></tr>
+      <tr><td><b>Sandbox contents</b></td><td>Execution</td><td>Ephemeral, always destroyed</td><td>Minutes</td><td>Disposable by construction</td></tr>
+      <tr><td><b>Telemetry &amp; traces</b></td><td>Record</td><td>Existing observability backend</td><td>Per platform policy</td><td>Do not build a second one</td></tr>
+      <tr><td><b>Incidents</b></td><td>Record</td><td><b>ServiceNow</b></td><td>Per policy</td><td>The system of record stays the system of record</td></tr>
+      <tr><td><b>Workload data</b></td><td>—</td><td><b>Never leaves the workload</b></td><td>—</td><td>The suite reads facts about data, not the data</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sect grid g3" style="margin-top:15px">
+    <div class="box tint"><b class="t">Why collectors run in the execution plane</b><p class="n">They sit beside the workload, inside its network and its permission boundary. The control plane receives <em>observations</em> — counts, rates, booleans — never rows. That keeps a central service out of the data path and out of scope for most data-residency questions.</p></div>
+    <div class="box tint"><b class="t">Why sandboxes are ephemeral</b><p class="n">Created per task, destroyed on completion including on failure. Nothing accumulates, nothing needs cleaning up, and a leaked sandbox cannot become a shadow copy of production data.</p></div>
+    <div class="box tint"><b class="t">What we deliberately do not build</b><p class="n">No new observability backend, no new ticketing system, no new catalog. The suite integrates with what exists; the only stores it owns are the spec and the evidence.</p></div>
+  </div>
+
+  <div class="foot">
+    The suite is small because it stores almost nothing.
+    <span>Two owned artefacts — the spec and the evidence bundle — and adapters onto everything else.</span>
+  </div>
+</section>
+
+<!-- ===================== 6 · IDENTITY, SECURITY, CROSS-CUTTING ===================== -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Architecture 6</span>
+    <h2>Identity, security and cross-cutting concerns</h2>
+    <span class="s">What each component may do, and what it may never do</span>
+  </div>
+
+  <div class="sect">
+    <h3>Authority model</h3>
+    <div class="ladder">
+      <div class="rung r0"><div class="cls">Read</div><div class="nm">Collectors &amp; base agents<small>Evidence gathering</small></div><div class="who">Workload identity</div><div class="ex">Read-only against the workload's own systems. No collector holds a write credential — the capability simply does not exist in the code.</div></div>
+      <div class="rung r1"><div class="cls">Execute</div><div class="nm">Sandbox Creator<small>Isolated execution</small></div><div class="who">Sandbox identity</div><div class="ex">Full rights inside a disposable copy, none outside it. Rollback and dry-runs are proven here before anything touches production.</div></div>
+      <div class="rung r2"><div class="cls">Act</div><div class="nm">Remediation executor<small>Class 1 and bounded class 2</small></div><div class="who">Scoped service identity</div><div class="ex">Only the actions bound to a runbook, only within declared bounds, only outside freeze windows, always followed by validation.</div></div>
+      <div class="rung r3"><div class="cls">Sign</div><div class="nm">Acceptance, class 3, spec change<small>Irreversible or regulated</small></div><div class="who">Named human</div><div class="ex">Production acceptance, GxP-relevant change, and any change to the bar itself. No override flag exists.</div></div>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Security properties, enforced in code</b>
+      <ul class="none">
+        <li><b>Fails closed.</b> Unreachable evidence is an error, never a pass. Zero findings across zero files is no scan, not a clean scan</li>
+        <li><b>Rules are data.</b> Parsed to an AST against a whitelist — a spec file cannot execute anything</li>
+        <li><b>No silent skips.</b> Every check is verified, attested or waived with an approver and an expiry</li>
+        <li><b>Signature integrity.</b> A failing gate cannot be signed as accepted; overriding a blocker is a separate, visible waiver</li>
+        <li><b>Least privilege by absence.</b> Components lack the credentials for what they must never do</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Cross-cutting</b>
+      <ul class="none">
+        <li><b>Observability</b> — one span schema across all four capabilities: spec version, policy version, check id, outcome, duration, cost</li>
+        <li><b>Audit</b> — every bundle stamps the spec and policy version it was judged against</li>
+        <li><b>Cost</b> — the suite's own spend is attributed per workload, like any other consumer</li>
+        <li><b>Idempotency</b> — every remediation carries a key; a retry cannot act twice</li>
+        <li><b>Kill switch</b> — per workload, per domain, global</li>
+        <li><b>Determinism</b> — same spec and same evidence produce the same verdict, today and in three years</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Failure modes of the suite itself</h3>
+    <div class="grid g4">
+      <div class="box tint"><b class="t">Evidence source down</b><p class="n">Check fails closed and is reported as <code>error</code>, distinct from <code>fail</code> — an outage never reads as a defect</p></div>
+      <div class="box tint"><b class="t">The suite is down</b><p class="n">Monitors fail closed and page a human. Absence of signal is treated as failure</p></div>
+      <div class="box tint"><b class="t">Spec rot</b><p class="n">Versioned and owned; every bundle records the version it was judged against, so drift is visible</p></div>
+      <div class="box tint"><b class="t">Gaming the thresholds</b><p class="n">Coverage and DQ sampled independently by Ops after handover</p></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    The strongest security property here is what the components cannot do.
+    <span>Not policy, not configuration — capabilities that were never granted, in code that was never written.</span>
+  </div>
+</section>
+
+<!-- ===================== 7 · BUILD ORDER ===================== -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Architecture 7</span>
+    <h2>Build order and current state</h2>
+    <span class="s">Dependency-ordered, with what already runs</span>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th style="width:7%">Phase</th><th style="width:26%">Deliver</th>
+      <th style="width:32%">Unlocks</th><th style="width:35%">State</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><b>0</b></td><td>Contracts, spec format, rule evaluator</td><td>Everything — nothing can be built before the shared types</td><td><b>Done.</b> Stdlib only, 21 tests</td></tr>
+      <tr><td><b>1</b></td><td>Base agents ×4</td><td>All four capabilities. Built once, consumed everywhere</td><td><b>Done.</b> Sandbox executes real scripts; IaC agent detects real drift</td></tr>
+      <tr><td><b>2</b></td><td>Ops Gate: collectors, engine, bundle, signature</td><td>The bar becomes enforceable; CI can gate production</td><td><b>Done.</b> 19 checks, exit 0/1/2</td></tr>
+      <tr><td><b>3</b></td><td>Day-2 emitter</td><td>The gate becomes continuous rather than a moment</td><td><b>Done.</b> Passing checks only</td></tr>
+      <tr class="hi"><td><b>4</b></td><td>Monitor runner</td><td>Self-Monitoring. Same evaluator, on a schedule</td><td><b>Next.</b> Reuses the built evaluator</td></tr>
+      <tr class="hi"><td><b>5</b></td><td>Policy engine + guardrails</td><td>Action classes become enforceable</td><td>Spec written, engine to build</td></tr>
+      <tr><td><b>6</b></td><td>Remediation executor + validator</td><td>Self-Healing at class 1, observe-only elsewhere</td><td>Designed</td></tr>
+      <tr><td><b>7</b></td><td>Diagnosis agent</td><td>Explanations an engineer can act on at 3am</td><td>Designed</td></tr>
+      <tr><td><b>8</b></td><td>Class 2 with sandbox dry-run</td><td>Bounded stateful remediation</td><td>Sandbox already built</td></tr>
+      <tr><td><b>9</b></td><td>Knowledge store + prior-incident matcher</td><td>L2 Resolver intake</td><td>Prototyped separately</td></tr>
+      <tr><td><b>10</b></td><td>Investigator + proposal builder</td><td>L2 Resolver, advisory</td><td>Designed</td></tr>
+      <tr><td><b>11</b></td><td>Learning proposer</td><td>Closes the loop back to the spec</td><td>Designed</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sect grid g3" style="margin-top:15px">
+    <div class="box tint"><b class="t">Why this order</b><p class="n">Strictly dependency-driven. Phases 0–3 are the foundation everything else composes from, which is why phases 4–11 are additive rather than foundational — each reuses components that already run.</p></div>
+    <div class="box tint"><b class="t">Value arrives at phase 2</b><p class="n">Ops Gate is useful alone, with no monitoring and no healing. Nothing here requires the whole suite to exist before anything works.</p></div>
+    <div class="box tint"><b class="t">What is deliberately last</b><p class="n">Class 2 remediation and the learning loop. Authority is earned after the observation phases have shown the recommendations were right.</p></div>
+  </div>
+
+  <div class="foot">
+    Fifteen of twenty-six components exist and run today.
+    <span>The remaining eleven compose from them — which is the test of whether the base-agent decomposition was real or just a diagram.</span>
+  </div>
+</section>
+
+</body>
+</html>
