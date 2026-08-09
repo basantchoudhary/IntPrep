@@ -1,0 +1,680 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ops Gate — Implementation Design</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .page{max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12)}
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:16px}
+  .ph .k{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none}
+  .ph .k.bk{background:var(--mute)}
+  .ph h2{margin:0;font-size:clamp(19px,2.1vw,26px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+  h3{margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g23{grid-template-columns:1.15fr 1fr}
+  .sect{margin-bottom:16px}
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px}
+  ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0}
+  ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+  p.n + p.n{margin-top:7px}
+  .prob{border-left:4px solid var(--red);background:#FCF3F2}
+  .prob b.t{color:var(--red)}
+  .prom{border-left:4px solid var(--teal);background:#F1F8F6}
+  .prom b.t{color:var(--teal)}
+
+  /* the ladder */
+  .lad{display:grid;gap:7px}
+  .lrow{display:grid;grid-template-columns:112px 1.15fr 1.15fr 1fr;gap:12px;align-items:center;
+    border:1px solid var(--line);border-radius:9px;padding:9px 13px;background:#fff}
+  .lrow .lv{display:flex;align-items:center;gap:8px}
+  .lrow .lv i{font-style:normal;width:23px;height:23px;border-radius:6px;display:grid;place-items:center;
+    font-size:12px;font-weight:800;color:#fff;flex:none}
+  .lrow .lv b{font-size:13px;font-weight:800;letter-spacing:-.01em}
+  .lrow span{font-size:12.5px;color:#4A5A6E;line-height:1.45}
+  .lrow .st{font:700 11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--mute)}
+  .l0{border-left:4px solid var(--mute)}      .l0 .lv i{background:var(--mute)}      .l0 .lv b{color:var(--mute)}
+  .l1{border-left:4px solid var(--navy)}      .l1 .lv i{background:var(--navy)}      .l1 .lv b{color:var(--navy)}
+  .l2{border-left:4px solid var(--teal)}      .l2 .lv i{background:var(--teal)}      .l2 .lv b{color:var(--teal)}
+  .l3{border-left:4px solid #0B5F53;background:#F1F8F6} .l3 .lv i{background:#0B5F53} .l3 .lv b{color:#0B5F53}
+
+  /* numbered layer stack */
+  .lay{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:9px;padding:9px 13px;margin-bottom:6px}
+  .lay .n{width:23px;height:23px;border-radius:6px;display:grid;place-items:center;flex:none;
+    font-size:12px;font-weight:800;color:#fff;background:var(--navy)}
+  .lay b{font-size:13px;font-weight:800;min-width:132px;letter-spacing:-.01em}
+  .lay span{font-size:12.5px;color:#4A5A6E;line-height:1.45}
+  .lay .w{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--red);text-align:right;flex:none;max-width:270px;line-height:1.35}
+  .lay.agt{border-left:4px solid var(--agent)} .lay.agt .n{background:var(--agent)} .lay.agt b{color:var(--agent)}
+  .lay.hum{border-left:4px solid var(--amber)} .lay.hum .n{background:var(--amber)} .lay.hum b{color:var(--amber)}
+  .lay.det{border-left:4px solid var(--navy)}
+
+  .sp{border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+  .sp h4{margin:0 0 6px;font-size:13.5px;font-weight:800}
+  .sp p{margin:0;font-size:12.5px;line-height:1.55;color:#44536A}
+  .sp.d{background:#EEF3FA;border-color:#C6D6EC} .sp.d h4{color:var(--navy)}
+  .sp.a{background:#F4EFFB;border-color:#DDCCF0} .sp.a h4{color:var(--agent)}
+  .sp.h{background:#FBF5E9;border-color:#E4CE9E} .sp.h h4{color:var(--amber)}
+
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:7px 9px;background:var(--navy);color:#fff;
+    font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+  td{padding:6px 9px;border-bottom:1px solid var(--line);color:#33445A;vertical-align:top;line-height:1.45}
+  tr:nth-child(even) td{background:#FAFCFD}
+  table.sm{font-size:12px} table.sm td{padding:5px 8px}
+  code{font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#EEF2F7;
+    border-radius:4px;padding:1px 5px;color:#26364B}
+  td code{font-size:11px}
+  .yes{color:var(--teal);font-weight:800}
+  .no{color:var(--red);font-weight:800}
+  .pill{display:inline-block;border-radius:4px;padding:1px 7px;font-size:10px;font-weight:800;
+    letter-spacing:.04em;text-transform:uppercase;color:#fff;white-space:nowrap}
+  .pn{background:var(--red)} .py{background:var(--teal)} .pm{background:var(--mute)}
+  .pbuilt{background:var(--teal)} .pnew{background:var(--amber)}
+
+  pre{margin:0;background:#101B2B;color:#D7E3F2;border-radius:9px;padding:13px 15px;
+    font:500 11.5px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
+  pre .c{color:#7C90AA} pre .k{color:#8FD3FF} pre .v{color:#F3C77B}
+
+  .kpi{text-align:center;border:1px solid var(--line);border-radius:10px;padding:12px 10px;background:var(--panel)}
+  .kpi b{display:block;font-size:23px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+  .kpi span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute);font-weight:600}
+
+  .foot{margin-top:14px;border-top:2px solid var(--navy);padding-top:10px;
+    font-size:13px;font-weight:800;color:var(--navy);text-align:center}
+  .foot span{display:block;margin-top:4px;font-size:11.5px;font-weight:600;color:var(--mute)}
+
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+    tr{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 1 · THE LADDER ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Design</span>
+    <h2>Ops Gate — Implementation Design</h2>
+    <span class="s">170 items · unstandardised evidence · no mandate</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box prob">
+      <b class="t">The trap</b>
+      <p class="n">Treating each item as <em>automated or manual</em>. That forces 170 adapters before
+      the gate is worth anything, so it never ships — and the items that resist automation get quietly
+      dropped, which means <b>the tooling silently becomes the bar</b>.</p>
+    </div>
+    <div class="box prom">
+      <b class="t">The move</b>
+      <p class="n">Every item enters at <b>Level&nbsp;0</b> and climbs independently. The gate ships
+      complete over all 170 on day one; adapters only move items up. <b>Promotion never rewrites a
+      rule</b>, because rules are written against a normalised vocabulary, not against a tool.</p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>The verification ladder</h3>
+    <div class="lad">
+      <div class="lrow l0">
+        <div class="lv"><i>0</i><b>Declared</b></div>
+        <span>The project asserts it, with a name and a date</span>
+        <span>Gate stores the assertion itself</span>
+        <span class="st">declared · missing</span>
+      </div>
+      <div class="lrow l1">
+        <div class="lv"><i>1</i><b>Evidenced</b></div>
+        <span>The project <em>points at</em> an artefact</span>
+        <span>Gate fetches and hashes it into the bundle</span>
+        <span class="st">evidenced · missing · error</span>
+      </div>
+      <div class="lrow l2">
+        <div class="lv"><i>2</i><b>Verified</b></div>
+        <span>Nothing new — the adapter fetches it</span>
+        <span>Observed values + a deterministic rule verdict</span>
+        <span class="st">pass · fail · error</span>
+      </div>
+      <div class="lrow l3">
+        <div class="lv"><i>3</i><b>Continuous</b></div>
+        <span>Nothing new — the same rule, on a schedule</span>
+        <span>Time series after handover</span>
+        <span class="st">pass · fail · error</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="sp d">
+      <h4>Ships complete on day one</h4>
+      <p>All 170 live at Level 0. That version already beats a document review: every item carries a
+      name, a date, and a waiver register with no blanks.</p>
+    </div>
+    <div class="sp a">
+      <h4>Promotion is additive</h4>
+      <p>Moving an item from 0 to 2 adds an adapter and a rule. No other check changes, no consumer
+      changes, no bundle format changes.</p>
+    </div>
+    <div class="sp h">
+      <h4>The maturity number is real</h4>
+      <p>Share of applicable items at Level 2+. Starts at ~15% and rises — a far better story than one
+      claiming 80% on day one.</p>
+    </div>
+  </div>
+
+  <div class="box tint">
+    <b class="t">"Isn't Level 0 just self-certification with extra steps?"</b>
+    <p class="n">Two things stop it. <b>One:</b> <code>declared</code> is a distinct status from
+    <code>pass</code> — it appears differently in the report and never counts toward the maturity
+    number. <b>Two:</b> a profile sets a minimum level per severity. Tier&nbsp;1 sets
+    <code>requires_level: {blocker: 2}</code>, so a blocker that is only <em>declared</em> does not pass
+    at tier&nbsp;1. Tier&nbsp;3 leaves it at 0. <b>This is where the tiering earns its keep.</b></p>
+  </div>
+
+  <div class="foot">
+    You never standardise the input. You standardise what the adapter emits.
+    <span>That single decision is what lets 170 items and an unknown number of platforms coexist.</span>
+  </div>
+</section>
+
+<!-- ============ 2 · DECISIONS ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Decisions</span>
+    <h2>Seven decisions, with their reasoning</h2>
+    <span class="s">Recorded as decisions so the reasoning survives the next argument</span>
+  </div>
+  <table>
+    <thead><tr><th style="width:42px">#</th><th style="width:29%">Decision</th><th>Rationale</th><th style="width:96px">Reversible</th></tr></thead>
+    <tbody>
+      <tr><td><b>D1</b></td><td><b>Every item enters at Level 0</b> and climbs independently. No item is dropped for being hard to verify.</td><td>Otherwise the bar silently becomes "what our tooling can see".</td><td><span class="pill pn">No — spine</span></td></tr>
+      <tr><td><b>D2</b></td><td><b>Normalise what the adapter emits</b>, never the input. Rules target a fixed field vocabulary per domain.</td><td>One rule covers Azure DevOps, GitHub Actions and Jenkins. Skipping this gives 170 bespoke rules and collapse within a year.</td><td><span class="pill pn">No</span></td></tr>
+      <tr><td><b>D3</b></td><td><b>Three fixed tier profiles.</b> No per-project profiles; relief comes only through waivers, which are visible and expire.</td><td>A negotiable bar is not a bar. Three profiles means three conversations, ever.</td><td><span class="pill py">Yes</span></td></tr>
+      <tr><td><b>D4</b></td><td><b>Item text is global; severity is per profile.</b> OWN-04 is Blocker at tier 1, Major at tier 2, absent at tier 3.</td><td>Fixes the 89-blocker problem without touching the checklist. An overlay is just a map of <code>id → severity</code>.</td><td><span class="pill py">Yes</span></td></tr>
+      <tr><td><b>D5</b></td><td><b>The PoC wires three platforms</b>: repo scan, CI results, cloud resource + tag state.</td><td>These need only a repository and one cloud account — plausibly obtainable without a programme.</td><td><span class="pill py">Yes</span></td></tr>
+      <tr><td><b>D6</b></td><td><b>Ask for attachment, not veto.</b> The bundle is attached to the acceptance record; it does not block the pipeline.</td><td>Veto is political and gets negotiated. Attachment is administrative and does nearly the same work.</td><td><span class="pill py">Yes</span></td></tr>
+      <tr><td><b>D7</b></td><td><b><code>declared</code> is a distinct status from <code>pass</code>.</b> Level 0 satisfies an item without claiming verification.</td><td>The bundle must never imply a machine checked something a human asserted.</td><td><span class="pill pn">No</span></td></tr>
+    </tbody>
+  </table>
+  <div class="sect" style="margin-top:14px">
+    <div class="box tint">
+      <b class="t">Assumption still to confirm</b>
+      <p class="n">D5 assumes an Azure-centric estate with Databricks and Azure Monitor. If GSK's actual
+      stack differs, <b>adapter sizing changes and nothing else in this design does</b> — which is itself
+      the point of D2.</p>
+    </div>
+  </div>
+  <div class="foot">Three of the seven are non-negotiable: the ladder, the field vocabulary, and <code>declared</code> ≠ <code>pass</code>.</div>
+</section>
+
+<!-- ============ 3 · INPUT ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Input</span>
+    <h2>Four files, one job each</h2>
+    <span class="s">Only the first is a genuinely new artefact</span>
+  </div>
+
+  <div class="sect grid g23">
+    <div>
+      <h3>manifest.yaml — pointers, not evidence</h3>
+<pre><span class="k">project:</span> <span class="v">orders-curation</span>
+<span class="k">tier:</span> <span class="v">2</span>
+
+<span class="k">owners:</span>
+  <span class="k">production:</span> jane.doe@gsk.com
+  <span class="k">technical:</span>  raj.patel@gsk.com
+  <span class="k">business:</span>   finance-ops-lead@gsk.com
+
+<span class="k">evidence:</span>
+  <span class="k">repo:</span>  https://dev.azure.com/gsk/data/_git/orders-curation
+  <span class="k">ci:</span>    { system: azure-devops, pipeline: orders-curation-ci }
+  <span class="k">cloud:</span> { subscription: sub-1234, tag: <span class="v">"project=orders-curation"</span> }
+  <span class="k">jobs:</span>  { system: databricks, workspace: adb-prod-eu }
+  <span class="k">observability:</span> { system: azure-monitor, workspace: law-data-prod }
+  <span class="k">data:</span>
+    <span class="k">primary:</span> curated/orders.csv
+    <span class="k">source:</span>  landing/orders_source.csv
+    <span class="k">measure:</span> order_value</pre>
+    </div>
+    <div>
+      <div class="box prom" style="margin-bottom:12px">
+        <b class="t">The manifest does more work than the automation does</b>
+        <p class="n">A project that cannot say where its alerting configuration lives has <b>failed
+        MON-01 before any tool ran.</b></p>
+        <p class="n">Filling it in <em>is</em> the readiness conversation — held months earlier than it
+        would otherwise happen, and in an hour rather than a workshop.</p>
+      </div>
+      <div class="box">
+        <b class="t">Two rules that keep it filled in</b>
+        <ul class="tight">
+          <li><b>Keep it small.</b> If it reads as a form, nobody completes it.</li>
+          <li><b>Convention over configuration.</b> Adapters probe the conventional locations first, so the manifest is mostly overrides.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+      <h3>declarations.yaml — the Level 0 assertions</h3>
+<pre><span class="k">declarations:</span>
+  <span class="k">RES-06:</span>
+    <span class="k">stated:</span> <span class="v">true</span>
+    <span class="k">by:</span>   raj.patel@gsk.com
+    <span class="k">date:</span> <span class="v">2026-05-14</span>
+    <span class="k">note:</span> <span class="v">"Restore tested into rg-orders-dr on 14 May,
+           completed in 42 minutes."</span></pre>
+      <p class="n" style="margin-top:9px">A declaration without <code>by</code> and <code>date</code> is
+      incomplete and reads as <code>missing</code>. The <code>note</code> is what a reviewer actually
+      reads.</p>
+    </div>
+    <div>
+      <h3>profiles/tier-2.yaml — thin overlay</h3>
+<pre><span class="k">profile:</span> <span class="v">tier-2</span>
+<span class="k">extends:</span> <span class="v">base</span>
+
+<span class="k">verdict:</span>
+  <span class="k">requires_level:</span> { blocker: <span class="v">1</span> }   <span class="c"># t1=2, t3=none</span>
+
+<span class="k">severity:</span>                    <span class="c"># only the overrides</span>
+  <span class="k">OWN-04:</span> major
+  <span class="k">RES-07:</span> minor
+
+<span class="k">exclude:</span> [REG-02, REG-07, SEC-11]</pre>
+      <p class="n" style="margin-top:9px"><code>attestations.yaml</code> and <code>waivers.yaml</code>
+      already exist and are unchanged — signature, role, date, expiry; and a blank is not a waiver.</p>
+    </div>
+  </div>
+
+  <div class="foot">The project declares <em>where</em>, never <em>what</em>. Everything else the gate fetches for itself.</div>
+</section>
+
+<!-- ============ 4 · PROCESS ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Process</span>
+    <h2>Seven stages — and the one where tools usually lie</h2>
+    <span class="s">Ordering matters</span>
+  </div>
+
+  <div class="sect">
+    <div class="lay det"><span class="n">1</span><b>Resolve</b><span>Tier → profile → the applicable subset, with per-item severity and level</span><span class="w">Unknown tier is an error, not a default</span></div>
+    <div class="lay det"><span class="n">2</span><b>Collect</b><span>By level: L0 reads declarations · L1 fetches and hashes the artefact · L2/L3 call the adapter</span><span class="w">Unavailable is a first-class result. Never a pass</span></div>
+    <div class="lay det"><span class="n">3</span><b>Evaluate</b><span>Deterministic rules, L2+ only. Parsed to an AST, walked against a whitelist — a spec cannot execute anything</span><span class="w">A rule that cannot be evaluated is <code>error</code></span></div>
+    <div class="lay agt"><span class="n">4</span><b>Assemble</b><span>Category B only: gather, cross-reference, and state the specific question a human must answer</span><span class="w">Status is <code>needs_review</code> regardless of what comes back</span></div>
+    <div class="lay det"><span class="n">5</span><b>Verdict</b><span>Pure rules over statuses, plus the profile's <code>requires_level</code> floor</span><span class="w">No model involvement, ever</span></div>
+    <div class="lay agt"><span class="n">6</span><b>Remediate</b><span>Where a base agent can produce the missing artefact, produce it into <code>.opsgate/remediation/</code></span><span class="w">Proposals only. Nothing is applied</span></div>
+    <div class="lay hum"><span class="n">7</span><b>Seal</b><span>Hash the bundle, stamp spec version and profile, take the signature</span><span class="w">A failing gate cannot be signed as accepted</span></div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Status vocabulary</b>
+      <p class="n" style="margin-bottom:7px">Two statuses are new — the rest already exist in the implementation.</p>
+      <ul class="tight">
+        <li><code>pass</code> · <code>fail</code> — Level 2+, a rule decided</li>
+        <li><code>declared</code> <b>(new)</b> · <code>evidenced</code> <b>(new)</b> — satisfied, but not verified</li>
+        <li><code>needs_review</code> — category B, awaiting a human</li>
+        <li><code>attested</code> · <code>missing</code> — a named signature, or its absence</li>
+        <li><code>waived</code> — reason, approver, expiry, all present</li>
+        <li><code>error</code> — evidence unreachable</li>
+      </ul>
+    </div>
+    <div class="box prob">
+      <b class="t">Stage 2 is where assurance tools quietly lie</b>
+      <p class="n">The check that <em>cannot run</em> reporting green is the single most common way one
+      of these systems becomes untrue. Zero findings across zero files is <b>no scan</b>, not a clean
+      scan.</p>
+      <p class="n"><code>error</code> and <code>missing</code> always fail closed.
+      <code>declared</code> and <code>evidenced</code> satisfy an item but are excluded from the maturity
+      number and are subject to <code>requires_level</code>.</p>
+    </div>
+  </div>
+
+  <div class="foot">Nothing passes by absence — written as the first code path, not added later as a fix.</div>
+</section>
+
+<!-- ============ 5 · ADAPTERS ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Contract</span>
+    <h2>The adapter vocabulary — the anti-sprawl mechanism</h2>
+    <span class="s">The decision that determines survival on contact with a second platform</span>
+  </div>
+
+  <div class="sect grid g23">
+    <div>
+      <table class="sm">
+        <thead><tr><th style="width:112px">Domain</th><th>Fields the adapter must emit</th><th style="width:64px">State</th></tr></thead>
+        <tbody>
+          <tr><td><code>test</code></td><td><code>suites · suites_failed · tests · coverage_pct · critical_path_coverage_pct</code></td><td><span class="pill pbuilt">built</span></td></tr>
+          <tr><td><code>dq</code></td><td><code>defined · evaluated · passed · failed · pass_rate · failures[]</code></td><td><span class="pill pbuilt">built</span></td></tr>
+          <tr><td><code>recon</code></td><td><code>source_rows · target_rows · row_variance · source_total · target_total · variance_pct</code></td><td><span class="pill pbuilt">built</span></td></tr>
+          <tr><td><code>iac</code></td><td><code>declared_count · deployed_count · missing[] · unmanaged[] · changed[] · resources_differing</code></td><td><span class="pill pbuilt">built</span></td></tr>
+          <tr><td><code>observability</code></td><td><code>slo_defined · slo_instrumented · alert_rules · failure_points · failure_points_alerted_pct · unalerted[]</code></td><td><span class="pill pbuilt">built</span></td></tr>
+          <tr><td><code>finops</code></td><td><code>tagged · budget_set · monthly_budget · forecast · forecast_pct_variance</code></td><td><span class="pill pbuilt">built</span></td></tr>
+          <tr><td><code>repo</code></td><td><code>files_scanned · secrets · findings[]</code></td><td><span class="pill pbuilt">built</span></td></tr>
+          <tr><td><code>sandbox</code></td><td><code>executed · succeeded · exit_code · duration_s · timed_out</code></td><td><span class="pill pbuilt">built</span></td></tr>
+          <tr><td><code>release</code></td><td><code>tagged_release · pipeline_exists · tests_gated · approvals_required</code></td><td><span class="pill pnew">new</span></td></tr>
+          <tr><td><code>deps</code></td><td><code>pinned · total · eol_count · eol[]</code></td><td><span class="pill pnew">new</span></td></tr>
+          <tr><td><code>access</code></td><td><code>excess_permissions · privileged_accounts</code></td><td><span class="pill pbuilt">built</span></td></tr>
+          <tr><td><code>catalog</code></td><td><code>coverage_pct · unmasked_sensitive</code></td><td><span class="pill pbuilt">built</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="box prom" style="margin-bottom:12px">
+        <b class="t">The property this buys</b>
+        <p class="n">Adding Jenkins alongside Azure DevOps means writing one adapter that emits the
+        <code>test</code> and <code>release</code> vocabularies.</p>
+        <p class="n"><b>Zero checks change.</b> That is the reuse argument in one sentence, and it is
+        measurable rather than asserted.</p>
+      </div>
+      <div class="box prob">
+        <b class="t">The request that destroys it</b>
+        <p class="n">"We just need one custom field for this project."</p>
+        <p class="n">Grant it twice and rules become bespoke; grant it ten times and the system is 170
+        special cases nobody can change. <b>Custom values go in the <code>note</code>, never in a
+        rule.</b> D2 is the one to defend hardest, because each individual violation looks harmless.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">An adapter's only job is to speak the vocabulary, whatever the source speaks.</div>
+</section>
+
+<!-- ============ 6 · WHY ITEMS RESIST ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Classification</span>
+    <h2>"Cannot be automated" is five different problems</h2>
+    <span class="s">Conflating them is why teams either over-automate or give up</span>
+  </div>
+
+  <table>
+    <thead><tr><th style="width:19%">Reason it resists</th><th style="width:20%">Example items</th><th>Treatment</th><th style="width:15%">Can AI help?</th></tr></thead>
+    <tbody>
+      <tr><td><b>Needs judgement</b></td><td>PRF-02 · RES-11 · DQ-05</td><td>Category B: the agent assembles, frames the question, and a human decides</td><td><span class="yes">Yes</span> — highest value</td></tr>
+      <tr><td><b>Needs accountability</b></td><td>REG-01/02/03 · ACC-09</td><td>Attested. Automate the <b>envelope</b> — signed, right role, in date — never the content</td><td>Envelope only</td></tr>
+      <tr><td><b>Needs an act to have happened</b></td><td>RES-06 · ACC-02 · ACC-03 · ACC-04 · PRF-03</td><td><b>No amount of reading proves an event occurred.</b> Make the act self-evidencing: instrument the drill, capture the exit code</td><td><span class="no">No</span></td></tr>
+      <tr><td><b>Needs reading prose</b></td><td>DOC-01 · DOC-04 · RES-02 · MON-03</td><td>The agent cross-references the document against recovered facts</td><td><span class="yes">Yes</span></td></tr>
+      <tr><td><b>Needs org context</b></td><td>OWN-05 · ACC-05 · SEC-12</td><td>Directory / IAM lookup — automatable, just not by a model</td><td>Not an AI problem</td></tr>
+    </tbody>
+  </table>
+
+  <div class="sect grid g2" style="margin-top:15px">
+    <div class="box prob">
+      <b class="t">Row three contains every item that will be contested</b>
+      <p class="n">RES-06, ACC-02, ACC-03, PRF-03 — all contested for the same reason: they require
+      <em>doing</em> the thing rather than describing it.</p>
+      <p class="n">The honest answer is not to infer them. It is to make performing them cheap and
+      self-evidencing. <b>Turn the act into its own evidence rather than trying to detect it
+      afterwards</b> — the sandbox rollback already works this way, and the trick generalises.</p>
+    </div>
+    <div>
+      <h3>Assembly tasks worth building, in value order</h3>
+      <table class="sm">
+        <tbody>
+          <tr><td style="width:26px"><b>1</b></td><td><b>Runbook coverage</b> — do runbooks cover every failure mode in the RES register? <span style="color:var(--mute)">MON-03, DOC-03</span></td></tr>
+          <tr><td><b>2</b></td><td><b>Architecture currency</b> — does the document match the recovered topology? <span style="color:var(--mute)">DOC-01</span></td></tr>
+          <tr><td><b>3</b></td><td><b>Undocumented failure points</b> — already built; the template for the rest <span style="color:var(--mute)">RES-02</span></td></tr>
+          <tr><td><b>4</b></td><td><b>SLO realism</b> — declared target vs sandbox-observed behaviour <span style="color:var(--mute)">PRF-02</span></td></tr>
+          <tr><td><b>5</b></td><td><b>Manifest drafting</b> — read the repo, propose the manifest, so the team <em>edits</em> rather than authors</td></tr>
+        </tbody>
+      </table>
+      <div class="box tint" style="margin-top:10px">
+        <p class="n"><b>Number 5 is not obvious and matters most.</b> It reduces adoption friction more
+        than any individual check — and adoption, not coverage, is the actual constraint.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    If an item's status depends on a model's opinion, it is category B and stays there.
+    <span>No exceptions for convenience — the exception is what gets asked about in an audit.</span>
+  </div>
+</section>
+
+<!-- ============ 7 · SKILLS ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Packaging</span>
+    <h2>What should be a skill, and what should not</h2>
+    <span class="s">Over-decomposition buys version skew and nothing else</span>
+  </div>
+
+  <div class="sect">
+    <table>
+      <thead><tr><th style="width:27%">Thing</th><th style="width:20%">Skill?</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td><b>The gate itself</b></td><td><span class="pill py">Yes — exists</span></td><td>Operator-facing, portable, adoptable by a team without adopting our tooling opinions</td></tr>
+        <tr><td><b>A "prepare for the gate" self-check</b></td><td><span class="pill py">Yes — build this</span></td><td>Project-side. They run it because it helps <em>them</em>. Adoption without politics</td></tr>
+        <tr><td>Evidence adapters</td><td><span class="pill pn">No</span></td><td>Connectors behind a contract. One skill per adapter is over-decomposition and buys version skew</td></tr>
+        <tr><td>The assembly tasks</td><td><span class="pill pm">Three or four</span></td><td>Prompt-heavy and judgement-adjacent, so genuinely skill-shaped — but not thirty of them</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box prom">
+      <b class="t">The self-check is an adoption strategy, not a feature</b>
+      <p class="n">An Ops-side gate is <b>compliance</b>, and gets resisted.</p>
+      <p class="n">The same spec handed to a project team as <em>"run this and see what you'd fail —
+      and I'll draft your manifest"</em> is <b>help</b>, and gets adopted.</p>
+      <p class="n"><b>Same file. Opposite politics.</b> It is also, directly, the shift-left stage of the
+      rollout plan.</p>
+    </div>
+    <div class="box">
+      <b class="t">Why one repository, not five</b>
+      <ul class="tight">
+        <li>The base agents and the gate share one contract — the check spec. Splitting them buys version skew and contradicts the composability thesis.</li>
+        <li>Each agent is a package depending only on <code>contracts/</code>, so any one could be lifted out without unpicking imports.</li>
+        <li><b>Repo strategy is not the same thing as module boundaries</b> — worth saying explicitly if asked.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">Ship the bar as something adoptable. A pattern that needs its author present is a consultancy engagement, not a reusable asset.</div>
+</section>
+
+<!-- ============ 8 · POC SCOPE ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">PoC</span>
+    <h2>Scope, the migration hazard, and build order</h2>
+    <span class="s">19 checks exist · ~25 of 170 items covered · ~15% maturity</span>
+  </div>
+
+  <div class="sect grid g4">
+    <div class="kpi"><b>170</b><span>Items live at Level 0 from day one</span></div>
+    <div class="kpi"><b>~25</b><span>Already covered by the 19 built checks</span></div>
+    <div class="kpi"><b>~33</b><span>After two new adapters — about 19%</span></div>
+    <div class="kpi"><b>2</b><span>New adapters needed: <code>release</code>, <code>deps</code></span></div>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+      <h3>New items reaching Level 2 in the PoC</h3>
+      <p class="n" style="margin-bottom:8px">Chosen because they need only a repository and one cloud
+      account — no programme, no integration board.</p>
+      <table class="sm">
+        <thead><tr><th style="width:34%">Item</th><th style="width:23%">Adapter</th><th>Rule sketch</th></tr></thead>
+        <tbody>
+          <tr><td>REL-01 tagged release</td><td><code>release</code></td><td><code>tagged_release</code></td></tr>
+          <tr><td>REL-02 pipeline exists</td><td><code>release</code></td><td><code>pipeline_exists</code></td></tr>
+          <tr><td>REL-03 tests gate the pipeline</td><td><code>release</code></td><td><code>tests_gated</code></td></tr>
+          <tr><td>REL-06 approval not the deployer</td><td><code>release</code></td><td><code>approvals_required &gt;= 1</code></td></tr>
+          <tr><td>MNT-02 dependencies pinned</td><td><code>deps</code></td><td><code>pinned == total</code></td></tr>
+          <tr><td>MNT-03 no EOL dependency</td><td><code>deps</code></td><td><code>eol_count == 0</code></td></tr>
+          <tr><td>DQ-09 freshness declared</td><td><code>dq</code></td><td><code>freshness_sla_declared</code></td></tr>
+          <tr><td>DQ-10 volume expectation declared</td><td><code>dq</code></td><td><code>volume_bounds_declared</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      <div class="box prob" style="margin-bottom:12px">
+        <b class="t">⚠ Migration hazard — the two ID schemes collide</b>
+        <p class="n">Implemented <code>CFG-01</code> is <b>drift</b>. Checklist <code>CFG-01</code> is
+        <b>secrets</b>. Same identifier, different meaning.</p>
+        <p class="n">The migration must be a <b>rename with an explicit mapping table</b>, not an
+        overlay. A silent mis-map here would be very hard to spot and would invalidate every bundle
+        produced before it was found. Re-run one known bundle before and after and diff it.</p>
+      </div>
+      <h3>Build order</h3>
+      <div class="lay det"><span class="n">1</span><b>Ladder in the engine</b><span><code>level</code> on the check · <code>declared</code>/<code>evidenced</code> · <code>requires_level</code></span></div>
+      <div class="lay det"><span class="n">2</span><b>Loaders + migration</b><span>manifest, declarations, and the ID mapping table</span></div>
+      <div class="lay det"><span class="n">3</span><b>Three tier profiles</b><span>as thin overlays</span></div>
+      <div class="lay det"><span class="n">4</span><b>Two adapters</b><span><code>release</code> and <code>deps</code> — the cheapest Level 2 items</span></div>
+      <div class="lay agt"><span class="n">5</span><b>Manifest drafter</b><span>cuts adoption friction more than any check</span></div>
+      <div class="lay agt"><span class="n">6</span><b>Runbook coverage</b><span>highest-value category B not yet built</span></div>
+      <div class="lay det"><span class="n">7</span><b>Self-check packaging</b><span>same engine, project-side</span></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Steps 1–3 are a working end-to-end gate over all 170 items.
+    <span>Everything from step 4 onward only moves the number.</span>
+  </div>
+</section>
+
+<!-- ============ 9 · ADOPTION ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Adoption</span>
+    <h2>Earning a mandate a PoC cannot be granted</h2>
+    <span class="s">The goal is not to hold the mandate — it is to make granting it cheap</span>
+  </div>
+
+  <div class="sect">
+    <table>
+      <thead><tr><th style="width:42px">#</th><th style="width:25%">Move</th><th style="width:22%">Permission needed</th><th>What it produces</th></tr></thead>
+      <tbody>
+        <tr><td><b>1</b></td><td><b>Retrospective run</b> on 2–3 already-accepted projects</td><td><span class="pill py">None</span> artefacts exist, nobody is blocked</td><td>"Passed the manual review, would have failed 6 blockers — and 2 of 3 early incidents map onto them"</td></tr>
+        <tr><td><b>2</b></td><td><b>Shadow</b> the next real handover</td><td>Informal</td><td>"It found things the review missed"</td></tr>
+        <tr><td><b>3</b></td><td><b>Publish the self-check</b></td><td><span class="pill py">None</span> opt-in</td><td>Adoption nobody had to mandate</td></tr>
+        <tr><td><b>4</b></td><td><b>Ask for attachment</b></td><td>One sponsor</td><td>Formalises what already happens</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="box prom">
+      <b class="t">Steps 1 and 3 need nobody's permission</b>
+      <p class="n">That is the point. On step 1, fill the manifest yourself so the project team carries
+      <b>zero cost</b> — which also removes the only reason they would say no.</p>
+    </div>
+    <div class="box prob">
+      <b class="t">Political caution on step 1</b>
+      <p class="n">Running this against a colleague's live system is warm. Frame every output as
+      <em>what the bar would have caught</em>, never <em>what that team got wrong</em>. Anonymise where
+      you can, and <b>run the first one on a project you were close to</b>, so you can be blunt about
+      your own.</p>
+    </div>
+    <div class="box tint">
+      <b class="t">Ask for attachment, not veto</b>
+      <p class="n">"The bundle is attached to the acceptance record" is <b>administrative</b> and gets
+      waved through. "The gate blocks production" is <b>political</b> and gets negotiated into nothing.</p>
+      <p class="n">Attachment does nearly the same work: a failing or unsigned bundle on the record is
+      visible to everyone who reads that record afterwards. <b>The blocking behaviour then emerges
+      without anyone having to grant it.</b></p>
+    </div>
+  </div>
+
+  <div class="foot">Mandate follows evidence — it does not precede it.</div>
+</section>
+
+<!-- ============ 10 · MEASURES & RISKS ============ -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Closing</span>
+    <h2>Measures, risks, and what is still open</h2>
+    <span class="s">What good looks like, and how this fails</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+      <h3>Measures</h3>
+      <table class="sm">
+        <thead><tr><th style="width:31%">Measure</th><th>Why it is the right one</th></tr></thead>
+        <tbody>
+          <tr><td><b>Maturity</b><br><span style="color:var(--mute)">items at Level 2+</span></td><td>The one number designed to rise release on release</td></tr>
+          <tr><td><b>First-pass rate</b></td><td>Rises as the self-check spreads — measures shift-left, not gate strictness</td></tr>
+          <tr><td><b>Shift-left ratio</b></td><td>Defects caught at the gate vs found in production — the outcome that justifies the whole thing</td></tr>
+          <tr><td><b>Cycle time</b></td><td>Days → hours is the number the business hears</td></tr>
+          <tr><td><b>Waiver rate</b><br><span style="color:var(--mute)">per domain</span></td><td>A rising rate is a signal about the bar, not about the projects</td></tr>
+        </tbody>
+      </table>
+      <div class="box prob" style="margin-top:11px">
+        <b class="t">Deliberately not measured: a readiness score</b>
+        <p class="n">"87% ready" is meaningless when three blockers are open, and a percentage invites
+        negotiation over which blocker matters. <b>Blockers are binary.</b> The only percentage published
+        is maturity.</p>
+      </div>
+    </div>
+    <div>
+      <h3>Risks</h3>
+      <table class="sm">
+        <thead><tr><th style="width:38%">Risk</th><th>Mitigation</th></tr></thead>
+        <tbody>
+          <tr><td><b>The tooling decides the bar</b> — hard items quietly dropped</td><td>Level 0 exists for exactly this. Unautomatable items stay on the list, declared and signed</td></tr>
+          <tr><td><b>Level 0 becomes theatre</b></td><td><code>declared</code> ≠ <code>pass</code>, excluded from maturity, and <code>requires_level</code> raises the floor per tier</td></tr>
+          <tr><td><b>Field vocabulary sprawl</b></td><td>D2 is non-negotiable. Custom values go in the <code>note</code>, never in a rule</td></tr>
+          <tr><td><b>ID collision on migration</b></td><td>Explicit mapping table; rename not overlay; diff one known bundle before and after</td></tr>
+          <tr><td><b>Manifest never gets filled</b></td><td>Convention over configuration; the manifest drafter; retrospective runs where the author fills it</td></tr>
+          <tr><td><b>Retrospective run reads as blame</b></td><td>"What the bar would have caught", anonymised, first one on her own project</td></tr>
+          <tr><td><b>170 items reads as bureaucracy</b></td><td>It is a superset, not an agenda. The tier-3 profile must be small enough to be obviously reasonable</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Open items</h3>
+    <div class="grid g3">
+      <div class="box"><ul class="tight">
+        <li>Confirm GSK's actual evidence platforms — D5 assumes Azure + Databricks + Azure Monitor</li>
+        <li>Define the three tier profiles concretely: exclusions and severity overrides</li>
+      </ul></div>
+      <div class="box"><ul class="tight">
+        <li>Severity down-grading pass — 89 blockers is a tier-1 reading; D4 makes the fix cheap but the grading still has to be done</li>
+        <li>Decide <code>requires_level</code> per tier. Proposed: <b>t1 = 2 · t2 = 1 · t3 = none</b></li>
+      </ul></div>
+      <div class="box"><ul class="tight">
+        <li>Pick the retrospective projects, and confirm the incident data needed to make the step-1 argument land</li>
+      </ul></div>
+    </div>
+  </div>
+
+  <div class="foot">
+    The gate ships complete on day one and gets better without ever being rewritten.
+    <span>That is the whole design in one sentence — everything else is a consequence of the ladder.</span>
+  </div>
+</section>
+
+</body>
+</html>
