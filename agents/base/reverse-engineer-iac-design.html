@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reverse Engineer IaC — Base Agent Design</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .page{max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12)}
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:18px}
+  .ph .k{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none}
+  .ph .k.bk{background:var(--mute)}
+  .ph h2{margin:0;font-size:clamp(20px,2.2vw,27px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+  h3{margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .sect{margin-bottom:18px}
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px}
+  ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0}
+  ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+  .prob{border-left:4px solid var(--red);background:#FCF3F2}
+  .prob b.t{color:var(--red)}
+  .prom{border-left:4px solid var(--teal);background:#F1F8F6}
+  .prom b.t{color:var(--teal)}
+  .flow{display:flex;align-items:stretch;gap:0;margin:4px 0 2px}
+  .fs{flex:1;border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fff;text-align:center}
+  .fs b{display:block;font-size:13px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  .fs span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute)}
+  .fs.hi{background:#EEF3FA;border-color:#B9CDE8}
+  .fs.ok{background:#F1F8F6;border-color:#BFDED6} .fs.ok b{color:var(--teal)}
+  .fs.warn{background:#FCF3F2;border-color:#E8C4C0} .fs.warn b{color:var(--red)}
+  .fa{display:grid;place-items:center;color:#9AA8B8;font-size:16px;padding:0 7px;flex:none}
+  .lay{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:9px;padding:10px 13px;margin-bottom:7px}
+  .lay .n{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:none;
+    font-size:12px;font-weight:800;color:#fff;background:var(--navy)}
+  .lay b{font-size:13.5px;font-weight:800;min-width:186px;letter-spacing:-.01em}
+  .lay span{font-size:12.5px;color:#4A5A6E;line-height:1.45}
+  .lay.det{border-left:4px solid var(--navy)}
+  .lay.agt{border-left:4px solid var(--agent)} .lay.agt .n{background:var(--agent)} .lay.agt b{color:var(--agent)}
+  .lay.hum{border-left:4px solid var(--amber)} .lay.hum .n{background:var(--amber)} .lay.hum b{color:var(--amber)}
+  .sp{border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+  .sp h4{margin:0 0 6px;font-size:13.5px;font-weight:800}
+  .sp p{margin:0;font-size:12.5px;line-height:1.55;color:#44536A}
+  .sp.d{background:#EEF3FA;border-color:#C6D6EC} .sp.d h4{color:var(--navy)}
+  .sp.a{background:#F4EFFB;border-color:#DDCCF0} .sp.a h4{color:var(--agent)}
+  .sp.h{background:#FBF5E9;border-color:#E4CE9E} .sp.h h4{color:var(--amber)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:7px 9px;background:var(--navy);color:#fff;
+    font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+  td{padding:7px 9px;border-bottom:1px solid var(--line);color:#33445A;vertical-align:top}
+  tr:nth-child(even) td{background:#FAFCFD}
+  code{font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#EEF2F7;
+    border-radius:4px;padding:1px 5px;color:#26364B}
+  td code{font-size:11.5px}
+  .pill{display:inline-block;min-width:19px;text-align:center;border-radius:4px;
+    padding:1px 6px;font-size:11px;font-weight:800;color:#fff}
+  .pa{background:var(--teal)} .pb{background:var(--agent)}
+  .pc{background:var(--amber)} .pd{background:var(--mute)}
+  pre{margin:0;background:#101B2B;color:#D7E3F2;border-radius:9px;padding:14px 16px;
+    font:500 12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
+  pre .c{color:#7C90AA} pre .k{color:#8FD3FF} pre .v{color:#F3C77B}
+  .foot{margin-top:16px;border-top:2px solid var(--navy);padding-top:11px;
+    font-size:13.5px;font-weight:800;color:var(--navy);text-align:center}
+  .foot span{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--mute)}
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+  }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="ph">
+    <span class="k">Base Agent</span>
+    <h2>Reverse Engineer IaC — Design</h2>
+    <span class="s"><code>agents/reverse_engineer_iac/</code> · the estate as deployed, not as described</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box prob">
+      <b class="t">The problem it removes</b>
+      <p class="n">A handover pack describes the system <em>as designed</em>. The estate has drifted since
+      — resources added by hand during go-live pressure, parameters changed and never back-ported. The
+      documented failure modes are the ones somebody remembered to write down, which is never the same
+      set as the ones the topology actually implies. Ops inherits a system it cannot see.</p>
+    </div>
+    <div class="box prom">
+      <b class="t">The promise</b>
+      <p class="n">Recover the topology from deployed state, diff it against what was declared, and
+      <b>derive the failure register from the topology itself</b>. That last step lets the gate ask a
+      question a document review structurally cannot: <em>which failure points exist in the deployed
+      system but appear nowhere in the handover pack?</em></p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Flow</h3>
+    <div class="flow">
+      <div class="fs"><b>Deployed state</b><span>what is actually running</span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Recover</b><span>resources, keyed by name</span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Diff vs declared</b><span>missing · unmanaged · changed</span></div>
+      <div class="fa">→</div>
+      <div class="fs"><b>Derive failure points</b><span>resource kind → failure modes</span></div>
+      <div class="fa">→</div>
+      <div class="fs warn"><b>Diff vs the docs</b><span>what the pack never mentioned</span></div>
+      <div class="fa">→</div>
+      <div class="fs ok"><b>Feeds three checks</b><span>CFG-01 · NFR-03 · NFR-05</span></div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Interface</h3>
+    <table>
+      <thead>
+        <tr><th style="width:33%">Function</th><th style="width:20%">Input</th><th>Returns</th><th style="width:19%">Consumed by</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>recover(state)</code></td>
+          <td>deployed state</td>
+          <td><code>available · resources{} · count</code> — the topology, keyed by resource name</td>
+          <td>every function below</td>
+        </tr>
+        <tr>
+          <td><code>drift(declared, deployed)</code></td>
+          <td>both states</td>
+          <td><code>missing[]</code> (declared, never deployed) · <code>unmanaged[]</code> (deployed, not in code) · <code>changed[]</code> (per-attribute declared vs deployed) · <code>resources_differing</code></td>
+          <td>Ops Gate <b>CFG-01</b></td>
+        </tr>
+        <tr>
+          <td><code>failure_points(state)</code></td>
+          <td>deployed state</td>
+          <td>One entry per resource whose <em>kind</em> carries failure semantics: <code>resource · kind · modes</code></td>
+          <td>Observability collector → <b>NFR-03</b></td>
+        </tr>
+        <tr>
+          <td><code>undocumented_failure_points(state, documented)</code></td>
+          <td>topology + the pack's declared list</td>
+          <td><code>derived · documented · undocumented[] · undocumented_count · detail[]</code></td>
+          <td>Ops Gate <b>NFR-05</b> <span class="pill pb">B</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="sp d">
+      <h4>Deterministic — the derivation</h4>
+      <p>Recovery, the diff and the failure-point derivation are all set arithmetic over a state file. The
+      list of gaps is a <b>fact</b>, reproducible on demand — which is exactly why it can be put in front
+      of a project team without an argument about whether the tool is being unfair.</p>
+    </div>
+    <div class="sp a">
+      <h4>Agentic — reading the pack</h4>
+      <p>The one genuinely unstructured input is the handover documentation itself: extracting which
+      failure modes a prose design document claims to cover. That extraction is a proposal fed into the
+      comparison — it is never the verdict.</p>
+    </div>
+    <div class="sp h">
+      <h4>Human — the acceptability call</h4>
+      <p><b>NFR-05 is category B on purpose.</b> That four resources are undocumented is a fact. Whether
+      that is acceptable for this system, on this risk profile, is a judgement — so the agent assembles
+      and Ops decides.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    A document review can only find what the document mentions. This agent compares the pack against the estate.
+    <span>It is the difference between reviewing a description and inspecting the thing.</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup</span>
+    <h2>Failure semantics, worked output, and limits</h2>
+    <span class="s">How a topology becomes a failure register</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+      <h3>The failure-semantics map</h3>
+      <table>
+        <thead><tr><th style="width:31%">Resource kind</th><th>Failure modes it introduces</th></tr></thead>
+        <tbody>
+          <tr><td><code>database</code></td><td>connection exhaustion, failover, storage full</td></tr>
+          <tr><td><code>queue</code></td><td>backlog growth, poison message, consumer stall</td></tr>
+          <tr><td><code>job</code></td><td>run failure, overrun, missed schedule</td></tr>
+          <tr><td><code>endpoint</code></td><td>upstream timeout, rate limit, TLS expiry</td></tr>
+          <tr><td><code>storage</code></td><td>quota, permission change, partial write</td></tr>
+          <tr><td><code>stream</code></td><td>lag, partition skew, offset reset</td></tr>
+          <tr><td><code>external_api</code></td><td>third-party outage, contract change, throttling</td></tr>
+        </tbody>
+      </table>
+      <div class="box tint" style="margin-top:12px">
+        <b class="t">Why this table is the whole idea</b>
+        <p class="n">Failure-mode analysis is normally a workshop whose output depends on who attended.
+        Encoding <em>kind → modes</em> makes the baseline analysis a property of the architecture rather
+        than of the meeting. The workshop still happens — it now starts from a complete list instead of
+        producing an incomplete one.</p>
+      </div>
+    </div>
+    <div>
+      <h3>Worked output — the sample project</h3>
+<pre><span class="c"># undocumented_failure_points(...)</span>
+{
+  <span class="k">"derived"</span>:            <span class="v">6</span>,
+  <span class="k">"documented"</span>:         <span class="v">2</span>,
+  <span class="k">"undocumented_count"</span>: <span class="v">4</span>,
+  <span class="k">"undocumented"</span>: [
+    <span class="v">"curate_job"</span>,      <span class="c"># run failure, overrun</span>
+    <span class="v">"orders_stream"</span>,   <span class="c"># lag, partition skew</span>
+    <span class="v">"landing_store"</span>,   <span class="c"># quota, partial write</span>
+    <span class="v">"fx_rates_api"</span>     <span class="c"># third-party outage</span>
+  ]
+}</pre>
+      <div class="box" style="margin-top:12px">
+        <b class="t">What Ops reads on the gate output</b>
+        <p class="n"><code>REVW [B] NFR-05 — 4 failure point(s) in the deployed topology are absent from
+        the handover pack: curate_job, orders_stream, landing_store, fx_rates_api</code></p>
+        <p class="n" style="margin-top:7px">Four named resources, each with the modes it introduces. That
+        is a conversation with the project team that takes ten minutes and starts from evidence — not a
+        three-hour review that ends in "looks fine".</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Checks it feeds</h3>
+    <table>
+      <thead>
+        <tr><th style="width:52px">Cat</th><th style="width:74px">ID</th><th style="width:26%">Check</th><th style="width:25%">Rule</th><th>Contribution</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="pill pa">A</span></td><td>CFG-01</td><td>No drift between declared and deployed</td><td><code>resources_differing == 0</code></td><td>Direct. Runs <b>daily</b> as a day-2 monitor, so drift is caught in days rather than at the next incident.</td></tr>
+        <tr><td><span class="pill pa">A</span></td><td>NFR-03</td><td>Every failure point has an alert</td><td><code>failure_points_alerted_pct == 100</code></td><td>Supplies the <em>denominator</em>. Alert coverage is measured against a derived register, not a hand-written one — you cannot get to 100% by shortening the list.</td></tr>
+        <tr><td><span class="pill pb">B</span></td><td>NFR-05</td><td>Failure modes documented with recovery</td><td>— <em>(human judges)</em></td><td>Supplies the gap list and its detail. On NFR-03 failure the gate also drafts alert rules for each unmonitored point.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Failure modes of the agent itself</b>
+      <ul class="tight">
+        <li><b>An unrecognised resource kind contributes no failure points</b> — a silent under-count, the most dangerous kind of gap in this agent. Partly covered by CFG-01, which flags any resource deployed but not declared, whatever its kind. Extending the map is a one-line change and should be a standing review item.</li>
+        <li><b>Documented-list matching is by lower-cased name.</b> A pack that says "the curation job" rather than <code>curate_job</code> reads as undocumented. Category B exists precisely so a human resolves that rather than the gate blocking on it.</li>
+        <li><b>Deployed state is a snapshot.</b> Drift found is drift at the moment of capture; the daily day-2 monitor is what turns a snapshot into a control.</li>
+        <li><b>State unreachable</b> → <code>available: false</code> → <code>ERROR</code>. An estate that cannot be inspected does not pass a configuration check.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Reuse beyond Ops Gate</b>
+      <ul class="none">
+        <li><b>Ops Self-Monitoring</b> — the daily drift check is this agent on a schedule. No new capability was built for it.</li>
+        <li><b>Ops Self-Healing</b> — the recovered topology <em>is</em> the map a diagnosis walks. You cannot remediate a system you have not modelled, and this is where the model comes from.</li>
+        <li><b>Spark / Databricks Modernization</b> — the common case is a legacy estate with no usable IaC at all. Recovery comes first; the modernization plan is written against the recovered topology.</li>
+        <li><b>Any inherited system</b> — acquisitions, vendor handovers, a team that left. This is the agent that answers "what have we actually got?"</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    Derive the failure register from the architecture, and completeness stops depending on who was in the room.
+    <span>The workshop still happens — it just starts from a complete list.</span>
+  </div>
+</section>
+
+</body>
+</html>

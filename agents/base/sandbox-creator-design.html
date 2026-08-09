@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sandbox Creator — Base Agent Design</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .page{max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12)}
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:18px}
+  .ph .k{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none}
+  .ph .k.bk{background:var(--mute)}
+  .ph h2{margin:0;font-size:clamp(20px,2.2vw,27px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+  h3{margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .sect{margin-bottom:18px}
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px}
+  ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0}
+  ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+  .prob{border-left:4px solid var(--red);background:#FCF3F2}
+  .prob b.t{color:var(--red)}
+  .prom{border-left:4px solid var(--teal);background:#F1F8F6}
+  .prom b.t{color:var(--teal)}
+  .flow{display:flex;align-items:stretch;gap:0;margin:4px 0 2px}
+  .fs{flex:1;border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fff;text-align:center}
+  .fs b{display:block;font-size:13px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  .fs span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute)}
+  .fs.hi{background:#EEF3FA;border-color:#B9CDE8}
+  .fs.ok{background:#F1F8F6;border-color:#BFDED6} .fs.ok b{color:var(--teal)}
+  .fs.warn{background:#FCF3F2;border-color:#E8C4C0} .fs.warn b{color:var(--red)}
+  .fa{display:grid;place-items:center;color:#9AA8B8;font-size:16px;padding:0 7px;flex:none}
+  .lay{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:9px;padding:10px 13px;margin-bottom:7px}
+  .lay .n{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:none;
+    font-size:12px;font-weight:800;color:#fff;background:var(--navy)}
+  .lay b{font-size:13.5px;font-weight:800;min-width:186px;letter-spacing:-.01em}
+  .lay span{font-size:12.5px;color:#4A5A6E;line-height:1.45}
+  .lay.det{border-left:4px solid var(--navy)}
+  .lay.agt{border-left:4px solid var(--agent)} .lay.agt .n{background:var(--agent)} .lay.agt b{color:var(--agent)}
+  .lay.hum{border-left:4px solid var(--amber)} .lay.hum .n{background:var(--amber)} .lay.hum b{color:var(--amber)}
+  .sp{border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+  .sp h4{margin:0 0 6px;font-size:13.5px;font-weight:800}
+  .sp p{margin:0;font-size:12.5px;line-height:1.55;color:#44536A}
+  .sp.d{background:#EEF3FA;border-color:#C6D6EC} .sp.d h4{color:var(--navy)}
+  .sp.a{background:#F4EFFB;border-color:#DDCCF0} .sp.a h4{color:var(--agent)}
+  .sp.h{background:#FBF5E9;border-color:#E4CE9E} .sp.h h4{color:var(--amber)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:7px 9px;background:var(--navy);color:#fff;
+    font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+  td{padding:7px 9px;border-bottom:1px solid var(--line);color:#33445A;vertical-align:top}
+  tr:nth-child(even) td{background:#FAFCFD}
+  code{font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#EEF2F7;
+    border-radius:4px;padding:1px 5px;color:#26364B}
+  td code{font-size:11.5px}
+  .pill{display:inline-block;min-width:19px;text-align:center;border-radius:4px;
+    padding:1px 6px;font-size:11px;font-weight:800;color:#fff}
+  .pa{background:var(--teal)} .pb{background:var(--agent)}
+  .pc{background:var(--amber)} .pd{background:var(--mute)}
+  pre{margin:0;background:#101B2B;color:#D7E3F2;border-radius:9px;padding:14px 16px;
+    font:500 12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
+  pre .c{color:#7C90AA} pre .k{color:#8FD3FF} pre .v{color:#F3C77B}
+  .foot{margin-top:16px;border-top:2px solid var(--navy);padding-top:11px;
+    font-size:13.5px;font-weight:800;color:var(--navy);text-align:center}
+  .foot span{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--mute)}
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+  }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="ph">
+    <span class="k">Base Agent</span>
+    <h2>Sandbox Creator — Design</h2>
+    <span class="s"><code>agents/sandbox_creator/</code> · demonstrated, not asserted</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box prob">
+      <b class="t">The problem it removes</b>
+      <p class="n">Every handover pack says <em>rollback is tested</em> and <em>the infrastructure is
+      reproducible from code</em>. Both are sentences. Nobody re-runs them at the gate, because running
+      them means touching an environment — so the two controls that matter most on a bad night are the
+      two nobody verifies. Ops finds out whether rollback works at the moment it needs rollback to work.</p>
+    </div>
+    <div class="box prom">
+      <b class="t">The promise</b>
+      <p class="n">Take a disposable copy of the project, <b>actually execute</b> the rollback and the
+      deploy inside it, and report the exit code and the duration. The claim becomes a measurement.
+      When the script is missing the check does not pass quietly — it fails closed, because an
+      unexecutable rollback is worse than a documented one.</p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Flow</h3>
+    <div class="flow">
+      <div class="fs"><b>Project</b><span>on disk, as handed over</span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Disposable copy</b><span><code>mkdtemp</code> + <code>copytree</code></span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Execute for real</b><span><code>/bin/sh</code>, cwd inside the copy</span></div>
+      <div class="fa">→</div>
+      <div class="fs"><b>Observe</b><span>exit code · duration · output</span></div>
+      <div class="fa">→</div>
+      <div class="fs ok"><b>Evidence</b><span>succeeded / timed out / absent</span></div>
+      <div class="fa">→</div>
+      <div class="fs"><b>Destroy</b><span><code>finally:</code> — always, even on failure</span></div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Interface</h3>
+    <table>
+      <thead>
+        <tr><th style="width:27%">Function</th><th style="width:24%">Input</th><th>Returns</th><th style="width:19%">Consumed by</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>sandbox(project)</code></td>
+          <td>project directory</td>
+          <td>Context manager yielding a temp copy. Removed in <code>finally</code> — no cleanup path depends on success.</td>
+          <td>every function below</td>
+        </tr>
+        <tr>
+          <td><code>run_script(project, script)</code></td>
+          <td>a script path relative to the project</td>
+          <td><code>available · executed · succeeded · exit_code · duration_s · timed_out · output</code> (capped at 600 chars)</td>
+          <td>SLO-realism assembler (<code>ops/perf_probe.sh</code>)</td>
+        </tr>
+        <tr>
+          <td><code>verify_rollback(project)</code></td>
+          <td>defaults to <code>ops/rollback.sh</code></td>
+          <td><code>executed · succeeded · duration_s · output</code></td>
+          <td>Ops Gate <b>NFR-06</b></td>
+        </tr>
+        <tr>
+          <td><code>clean_deploy(project)</code></td>
+          <td>defaults to <code>ops/deploy.sh</code></td>
+          <td><code>clean_deploy · duration_s · output</code></td>
+          <td>Ops Gate <b>CFG-03</b></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="sp d">
+      <h4>Deterministic — all of it</h4>
+      <p>Copy, execute, time, capture, destroy. There is no model in this agent at all. An exit code is
+      not an opinion, and the whole value of the agent is that the same project produces the same
+      evidence every run.</p>
+    </div>
+    <div class="sp a">
+      <h4>Agentic — only downstream</h4>
+      <p>The agent produces the observation; explaining <em>why</em> a rollback failed from 600 characters
+      of stderr is a comprehension task, and it happens in Ops Gate's remediation layer, not here.</p>
+    </div>
+    <div class="sp h">
+      <h4>Human — the acceptance</h4>
+      <p>A rollback that succeeds in 0.4 s on a copied directory is evidence, not proof of production
+      recoverability. Whether the sandbox is representative enough is a judgement Ops makes once, when
+      the project declares its scripts.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    The difference between a claim in a handover document and evidence is that one of them has an exit code.
+    <span>This is the agent that makes "we tested rollback" a falsifiable statement.</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup</span>
+    <h2>Composition, boundaries and failure modes</h2>
+    <span class="s">What Ops Gate gets · where the agent stops</span>
+  </div>
+
+  <div class="sect">
+    <h3>Checks it feeds</h3>
+    <table>
+      <thead>
+        <tr><th style="width:52px">Cat</th><th style="width:74px">ID</th><th style="width:29%">Check</th><th style="width:24%">Rule</th><th>What the agent contributes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="pill pa">A</span></td><td>NFR-06</td><td>Rollback demonstrated, not asserted</td><td><code>succeeded</code></td><td>Runs <code>ops/rollback.sh</code> in a sandbox. Re-tested per release as a day-2 monitor.</td></tr>
+        <tr><td><span class="pill pa">A</span></td><td>CFG-03</td><td>Infrastructure reproducible from code</td><td><code>clean_deploy</code></td><td>Runs <code>ops/deploy.sh</code> from a clean copy — reproducibility measured, not reviewed.</td></tr>
+        <tr><td><span class="pill pb">B</span></td><td>NFR-02</td><td>SLO target realistic for this architecture</td><td>— <em>(human judges)</em></td><td>Executes <code>ops/perf_probe.sh</code> so the declared SLO is compared against observed behaviour rather than against intent.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+      <h3>What a collector receives</h3>
+<pre><span class="c"># verify_rollback on the sample project</span>
+{
+  <span class="k">"executed"</span>:   <span class="v">true</span>,
+  <span class="k">"succeeded"</span>:  <span class="v">true</span>,
+  <span class="k">"duration_s"</span>: <span class="v">0.41</span>,
+  <span class="k">"output"</span>:     <span class="v">"reverted to previous version"</span>
+}
+
+<span class="c"># script absent — note what this is NOT</span>
+{
+  <span class="k">"executed"</span>:  <span class="v">false</span>,
+  <span class="k">"succeeded"</span>: <span class="v">false</span>,
+  <span class="k">"detail"</span>:    <span class="v">"script not found: ops/rollback.sh"</span>
+}
+<span class="c"># -> Evidence.unavailable -> status ERROR, never PASS</span></pre>
+    </div>
+    <div class="box tint">
+      <b class="t">The design rule this agent exists to enforce</b>
+      <p class="n" style="margin-bottom:8px"><b>Nothing passes by absence.</b> A project with no
+      <code>rollback.sh</code> is not a project with a trivially clean rollback. The collector converts a
+      missing script into <code>Evidence.unavailable(...)</code>, and the engine maps that to
+      <code>ERROR</code> — which fails the gate exactly as a broken rollback would.</p>
+      <p class="n">This is the single most common way an assurance tool lies: the check that cannot run
+      reports green. It is worth saying out loud, because it is a design decision, not an accident —
+      the code path for "cannot verify" was written before the code path for "verified".</p>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Failure modes of the agent itself</b>
+      <ul class="tight">
+        <li><b>Script hangs</b> → 60-second timeout, exit code <code>124</code>, <code>timed_out: true</code>. A hung rollback is a failed rollback.</li>
+        <li><b>Script is destructive to real infrastructure</b> → the sandbox isolates the <em>filesystem</em>, not the network. A script that calls a live cloud API is not contained. Mitigation is a convention — <code>ops/*.sh</code> target the environment named in the project config, and the gate runs against non-production.</li>
+        <li><b>Copy is not the environment</b> → the agent proves the script runs and exits clean; it does not prove the production estate would recover. Stated as a limit, not hidden.</li>
+        <li><b>Output truncation</b> → capped at 600 characters, deliberately: evidence bundles are audit records, not log stores.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Reuse beyond Ops Gate</b>
+      <ul class="none">
+        <li><b>Ops Self-Healing</b> — a proposed fix is applied in a sandbox and validated <em>before</em> it touches the real system. That gate is this agent; without it, self-healing is just automated damage.</li>
+        <li><b>Spark / Databricks Modernization</b> — the modernized job runs beside the original in an isolated copy, so equivalence is demonstrated rather than argued.</li>
+        <li><b>Any category B judgement needing observed behaviour</b> — the SLO-realism assembler is the first, and the pattern generalises: when the question is "is this claim true in practice", run it.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    One primitive — <em>run it somewhere disposable and watch what happens</em> — used by three capabilities.
+    <span>Nothing above this agent reimplements execution isolation.</span>
+  </div>
+</section>
+
+</body>
+</html>

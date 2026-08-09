@@ -104,6 +104,19 @@ Each capability has two decks: **architecture** for the room, **design** for the
 | Platform | [north-star-simplified.html](architecture/north-star-simplified.html) | [north-star-platform.md](architecture/north-star-platform.md) |
 | Principles | [principles.html](architecture/principles.html) | [principles.md](architecture/principles.md) |
 
+### Base agent designs (the reuse evidence — one deck each, 2 pages)
+
+Open only if the panel drills into "what exactly is reusable?". Each is grounded in the
+shipped implementation in DataPlatformSuite — interface, the checks it feeds, its own
+failure modes, and where it is reused beyond Ops Gate.
+
+| Base agent | Design deck | Feeds |
+|---|---|---|
+| Sandbox Creator | [sandbox-creator-design.html](agents/base/sandbox-creator-design.html) | NFR-06 · CFG-03 · NFR-02 |
+| Test Framework Generator | [test-framework-design.html](agents/base/test-framework-design.html) | FUN-01 · FUN-02 |
+| Data Expectation Services | [data-expectations-design.html](agents/base/data-expectations-design.html) | FUN-03 · FUN-04 |
+| Reverse Engineer IaC | [reverse-engineer-iac-design.html](agents/base/reverse-engineer-iac-design.html) | CFG-01 · NFR-03 · NFR-05 |
+
 Present the architecture decks. Open a design deck only if the panel drills.
 
 ## Q&A prep
@@ -138,7 +151,6 @@ monitors. 21 tests pass.
 2. CostAgent slides + demo script + fallback recording.
 3. ~~Ops Gate Agent design doc.~~ done — `agents/ops-gate/ops-gate-design.html`
 4. ~~Minimal Ops Gate implementation.~~ done — DataPlatformSuite
-5. Design docs for the four base agents (implementations exist; the *design*
-   narrative for each still needs writing).
+5. ~~Design docs for the four base agents.~~ done — `agents/base/`
 6. **Evidence bank**: for each theme, real GSK engagements with named adopters and a number.
 7. Confirm interview format — how long, who is on the panel, is live demo permitted.

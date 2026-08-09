@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Expectation Services — Base Agent Design</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .page{max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12)}
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:18px}
+  .ph .k{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none}
+  .ph .k.bk{background:var(--mute)}
+  .ph h2{margin:0;font-size:clamp(20px,2.2vw,27px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+  h3{margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .sect{margin-bottom:18px}
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px}
+  ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0}
+  ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+  .prob{border-left:4px solid var(--red);background:#FCF3F2}
+  .prob b.t{color:var(--red)}
+  .prom{border-left:4px solid var(--teal);background:#F1F8F6}
+  .prom b.t{color:var(--teal)}
+  .flow{display:flex;align-items:stretch;gap:0;margin:4px 0 2px}
+  .fs{flex:1;border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fff;text-align:center}
+  .fs b{display:block;font-size:13px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  .fs span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute)}
+  .fs.hi{background:#EEF3FA;border-color:#B9CDE8}
+  .fs.ok{background:#F1F8F6;border-color:#BFDED6} .fs.ok b{color:var(--teal)}
+  .fs.warn{background:#FCF3F2;border-color:#E8C4C0} .fs.warn b{color:var(--red)}
+  .fa{display:grid;place-items:center;color:#9AA8B8;font-size:16px;padding:0 7px;flex:none}
+  .lay{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:9px;padding:10px 13px;margin-bottom:7px}
+  .lay .n{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:none;
+    font-size:12px;font-weight:800;color:#fff;background:var(--navy)}
+  .lay b{font-size:13.5px;font-weight:800;min-width:186px;letter-spacing:-.01em}
+  .lay span{font-size:12.5px;color:#4A5A6E;line-height:1.45}
+  .lay.det{border-left:4px solid var(--navy)}
+  .lay.agt{border-left:4px solid var(--agent)} .lay.agt .n{background:var(--agent)} .lay.agt b{color:var(--agent)}
+  .lay.hum{border-left:4px solid var(--amber)} .lay.hum .n{background:var(--amber)} .lay.hum b{color:var(--amber)}
+  .sp{border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+  .sp h4{margin:0 0 6px;font-size:13.5px;font-weight:800}
+  .sp p{margin:0;font-size:12.5px;line-height:1.55;color:#44536A}
+  .sp.d{background:#EEF3FA;border-color:#C6D6EC} .sp.d h4{color:var(--navy)}
+  .sp.a{background:#F4EFFB;border-color:#DDCCF0} .sp.a h4{color:var(--agent)}
+  .sp.h{background:#FBF5E9;border-color:#E4CE9E} .sp.h h4{color:var(--amber)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:7px 9px;background:var(--navy);color:#fff;
+    font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+  td{padding:7px 9px;border-bottom:1px solid var(--line);color:#33445A;vertical-align:top}
+  tr:nth-child(even) td{background:#FAFCFD}
+  code{font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#EEF2F7;
+    border-radius:4px;padding:1px 5px;color:#26364B}
+  td code{font-size:11.5px}
+  .pill{display:inline-block;min-width:19px;text-align:center;border-radius:4px;
+    padding:1px 6px;font-size:11px;font-weight:800;color:#fff}
+  .pa{background:var(--teal)} .pb{background:var(--agent)}
+  .pc{background:var(--amber)} .pd{background:var(--mute)}
+  pre{margin:0;background:#101B2B;color:#D7E3F2;border-radius:9px;padding:14px 16px;
+    font:500 12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
+  pre .c{color:#7C90AA} pre .k{color:#8FD3FF} pre .v{color:#F3C77B}
+  .foot{margin-top:16px;border-top:2px solid var(--navy);padding-top:11px;
+    font-size:13.5px;font-weight:800;color:var(--navy);text-align:center}
+  .foot span{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--mute)}
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+  }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="ph">
+    <span class="k">Base Agent</span>
+    <h2>Data Expectation Services — Design</h2>
+    <span class="s"><code>agents/data_expectations/</code> · declaring nothing is not passing</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box prob">
+      <b class="t">The problem it removes</b>
+      <p class="n">"Data quality is covered" is the most common sentence in a handover pack and the
+      hardest to falsify. Rules live in a tool nobody opens at the gate; reconciliation was run once, by
+      hand, during UAT. Worst of all, a project that declared <em>no</em> expectations scores the same as
+      one whose expectations all pass — because a rate over zero rules is vacuously perfect.</p>
+    </div>
+    <div class="box prom">
+      <b class="t">The promise</b>
+      <p class="n">Profile the data, evaluate the declared expectations, reconcile source against target
+      — all as arithmetic, no model anywhere. The gate rule is <code>defined &gt; 0 <b>and</b> pass_rate
+      &gt;= 99.5</code>, so silence fails. And when a project declared nothing, the agent derives the
+      expectations it should have had and hands them back.</p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Flow</h3>
+    <div class="flow">
+      <div class="fs"><b>Dataset</b><span>declared in <code>project.yaml</code></span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Profile</b><span>null rate · distinct · type · range</span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Evaluate</b><span>declared expectations, row by row</span></div>
+      <div class="fa">→</div>
+      <div class="fs ok"><b>Rule decides</b><span>FUN-03 · FUN-04</span></div>
+      <div class="fa">→</div>
+      <div class="fs warn"><b>On fail: propose</b><span>rules derived from the profile</span></div>
+      <div class="fa">→</div>
+      <div class="fs"><b>Day-2</b><span>same expectations, every run</span></div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Interface</h3>
+    <table>
+      <thead>
+        <tr><th style="width:29%">Function</th><th style="width:21%">Input</th><th>Returns</th><th style="width:19%">Consumed by</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>profile(dataset)</code></td>
+          <td>a CSV dataset</td>
+          <td><code>rows</code> plus per column: <code>null_rate · distinct · distinct_rate · type</code>, and <code>min · max · mean</code> where numeric</td>
+          <td><code>propose()</code>; day-2 drift baselines</td>
+        </tr>
+        <tr>
+          <td><code>evaluate(dataset, expectations)</code></td>
+          <td>dataset + declared rules</td>
+          <td><code>defined · evaluated · passed · failed · pass_rate · failures[]</code> with the observed breach</td>
+          <td>Ops Gate <b>FUN-03</b></td>
+        </tr>
+        <tr>
+          <td><code>reconcile(source, target, measure)</code></td>
+          <td>two datasets + a numeric column</td>
+          <td><code>source_rows · target_rows · row_variance · source_total · target_total · variance_pct</code></td>
+          <td>Ops Gate <b>FUN-04</b></td>
+        </tr>
+        <tr>
+          <td><code>propose(dataset)</code></td>
+          <td>the profile</td>
+          <td>Derived expectations, written to <code>.opsgate/remediation/expectations.proposed.yaml</code></td>
+          <td>Ops Gate remediation</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="sp d">
+      <h4>Deterministic — all of it</h4>
+      <p>Profiling and rule evaluation are arithmetic. There is <b>no reason to involve a model</b>, and
+      involving one would cost the property that matters most: the same dataset and the same rules give
+      the same pass rate in three years, in front of an auditor.</p>
+    </div>
+    <div class="sp a">
+      <h4>Agentic — naming the semantics</h4>
+      <p>The agent can derive that a column is never null. It cannot know the column is a
+      <em>patient identifier</em>. Attaching business meaning to a derived rule is the one place a model
+      earns its seat — as a suggestion on a proposal, never as an applied rule.</p>
+    </div>
+    <div class="sp h">
+      <h4>Human — committing the rule</h4>
+      <p>A proposal describes one sample of data. Turning it into an expectation is a statement about all
+      future data, and that is a data owner's call. The agent writes the file; a person commits it.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    A pass rate over zero declared rules is not a pass — it is an empty measurement wearing a percentage.
+    <span><code>defined &gt; 0</code> is four characters of rule that close the most common assurance gap in data.</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup</span>
+    <h2>The rule vocabulary, derivation, and its limits</h2>
+    <span class="s">What Ops Gate gets · what a proposal is not</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+      <h3>Expectation vocabulary</h3>
+      <table>
+        <thead><tr><th style="width:36%">Expectation</th><th>Breach reported as</th></tr></thead>
+        <tbody>
+          <tr><td><code>not_null</code></td><td><code>"3 null(s)"</code></td></tr>
+          <tr><td><code>unique</code></td><td><code>"2 duplicate(s)"</code></td></tr>
+          <tr><td><code>between {min, max}</code></td><td><code>"7 value(s) outside range"</code></td></tr>
+          <tr><td><code>accepted_values [..]</code></td><td><code>"unexpected: ['PENDING']"</code></td></tr>
+          <tr><td><em>anything unrecognised</em></td><td><code>"unknown expectation 'x'"</code> — <b>counted as a failure</b></td></tr>
+        </tbody>
+      </table>
+      <div class="box tint" style="margin-top:12px">
+        <b class="t">Why an unknown rule fails rather than skips</b>
+        <p class="n">A typo in an expectation name is the quietest way to disable a control. Skipping it
+        would leave the pass rate at 100% while the rule does nothing. Failing it makes the typo visible
+        in the same release it was introduced — the check that cannot be evaluated is never the check
+        that passes.</p>
+      </div>
+    </div>
+    <div>
+      <h3>How a proposal is derived</h3>
+      <table>
+        <thead><tr><th style="width:47%">Observation in the profile</th><th>Proposed expectation</th></tr></thead>
+        <tbody>
+          <tr><td><code>null_rate == 0</code></td><td><code>not_null</code></td></tr>
+          <tr><td><code>distinct_rate == 100</code> and <code>rows &gt; 1</code></td><td><code>unique</code></td></tr>
+          <tr><td>numeric column with an observed range</td><td><code>between {min, max}</code></td></tr>
+        </tbody>
+      </table>
+      <div class="box" style="margin-top:12px">
+        <b class="t">A proposal is an observation, not a rule</b>
+        <ul class="tight">
+          <li><b><code>between</code> derived from one sample will be too tight.</b> Today's maximum order value is not tomorrow's ceiling. Committed as-is, it turns a good day into an incident.</li>
+          <li><b><code>unique</code> may be an accident of the sample</b> — small extracts are often incidentally distinct.</li>
+          <li>Which is exactly why the output is a file in <code>.opsgate/remediation/</code> with a header telling the reader to review it, and why nothing is applied automatically.</li>
+          <li>The value is not the rule. It is that the blank page is gone and the conversation starts at review rather than authorship.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Checks it feeds</h3>
+    <table>
+      <thead>
+        <tr><th style="width:52px">Cat</th><th style="width:74px">ID</th><th style="width:26%">Check</th><th style="width:26%">Rule</th><th>Day-2 behaviour</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="pill pa">A</span></td><td>FUN-03</td><td>DQ expectations declared and passing</td><td><code>defined &gt; 0 and pass_rate &gt;= 99.5</code></td><td>Runs on <b>every run</b> with a <code>dq-breach</code> alert. The gate check and the production monitor are the same rule.</td></tr>
+        <tr><td><span class="pill pa">A</span></td><td>FUN-04</td><td>Source-to-target reconciliation within tolerance</td><td><code>variance_pct &lt;= 0.1</code></td><td>Runs <b>daily</b>. Reconciliation stops being a UAT ritual and becomes a standing control.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Failure modes of the agent itself</b>
+      <ul class="tight">
+        <li><b>No dataset declared</b> → <code>Evidence.unavailable</code> → <code>ERROR</code>. A project that names no data does not get a data-quality pass.</li>
+        <li><b>Whole-file read.</b> CSV is loaded into memory — right for gate-scale samples, wrong for a production table. The interface is the contract; the implementation behind it is replaceable with a warehouse-side query without any consumer changing.</li>
+        <li><b>A column of mixed types</b> profiles as <code>string</code>, so no range is proposed. Silent, and acceptable — under-proposing is safer than proposing a wrong range.</li>
+        <li><b>Sampled data passes where full data would fail.</b> The gate evidences what it was pointed at; which dataset it is pointed at is a declaration in <code>project.yaml</code>, and therefore reviewable.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Reuse beyond Ops Gate</b>
+      <ul class="none">
+        <li><b>Ops Self-Monitoring</b> — the expectations that passed at the gate become the day-2 monitors verbatim. One artefact, authored once, doing gate duty and production duty.</li>
+        <li><b>Ops Self-Healing</b> — a DQ breach is the highest-signal diagnosis input there is: it names the column and the observed value, which is most of a root cause already.</li>
+        <li><b>Spark / Databricks Modernization</b> — <code>reconcile()</code> is how a modernized job is shown to produce the same numbers as the one it replaces.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    The same rules run at the gate and in production, because they are the same file.
+    <span>That is what makes assurance continuous rather than a date in a project plan.</span>
+  </div>
+</section>
+
+</body>
+</html>

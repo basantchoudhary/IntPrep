@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Framework Generator — Base Agent Design</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .page{max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12)}
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:18px}
+  .ph .k{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none}
+  .ph .k.bk{background:var(--mute)}
+  .ph h2{margin:0;font-size:clamp(20px,2.2vw,27px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+  h3{margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .sect{margin-bottom:18px}
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px}
+  ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0}
+  ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+  .prob{border-left:4px solid var(--red);background:#FCF3F2}
+  .prob b.t{color:var(--red)}
+  .prom{border-left:4px solid var(--teal);background:#F1F8F6}
+  .prom b.t{color:var(--teal)}
+  .flow{display:flex;align-items:stretch;gap:0;margin:4px 0 2px}
+  .fs{flex:1;border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fff;text-align:center}
+  .fs b{display:block;font-size:13px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  .fs span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute)}
+  .fs.hi{background:#EEF3FA;border-color:#B9CDE8}
+  .fs.ok{background:#F1F8F6;border-color:#BFDED6} .fs.ok b{color:var(--teal)}
+  .fs.warn{background:#FCF3F2;border-color:#E8C4C0} .fs.warn b{color:var(--red)}
+  .fa{display:grid;place-items:center;color:#9AA8B8;font-size:16px;padding:0 7px;flex:none}
+  .lay{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:9px;padding:10px 13px;margin-bottom:7px}
+  .lay .n{width:24px;height:24px;border-radius:6px;display:grid;place-items:center;flex:none;
+    font-size:12px;font-weight:800;color:#fff;background:var(--navy)}
+  .lay b{font-size:13.5px;font-weight:800;min-width:186px;letter-spacing:-.01em}
+  .lay span{font-size:12.5px;color:#4A5A6E;line-height:1.45}
+  .lay.det{border-left:4px solid var(--navy)}
+  .lay.agt{border-left:4px solid var(--agent)} .lay.agt .n{background:var(--agent)} .lay.agt b{color:var(--agent)}
+  .lay.hum{border-left:4px solid var(--amber)} .lay.hum .n{background:var(--amber)} .lay.hum b{color:var(--amber)}
+  .sp{border-radius:10px;padding:12px 14px;border:1px solid var(--line)}
+  .sp h4{margin:0 0 6px;font-size:13.5px;font-weight:800}
+  .sp p{margin:0;font-size:12.5px;line-height:1.55;color:#44536A}
+  .sp.d{background:#EEF3FA;border-color:#C6D6EC} .sp.d h4{color:var(--navy)}
+  .sp.a{background:#F4EFFB;border-color:#DDCCF0} .sp.a h4{color:var(--agent)}
+  .sp.h{background:#FBF5E9;border-color:#E4CE9E} .sp.h h4{color:var(--amber)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:7px 9px;background:var(--navy);color:#fff;
+    font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+  td{padding:7px 9px;border-bottom:1px solid var(--line);color:#33445A;vertical-align:top}
+  tr:nth-child(even) td{background:#FAFCFD}
+  code{font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#EEF2F7;
+    border-radius:4px;padding:1px 5px;color:#26364B}
+  td code{font-size:11.5px}
+  .pill{display:inline-block;min-width:19px;text-align:center;border-radius:4px;
+    padding:1px 6px;font-size:11px;font-weight:800;color:#fff}
+  .pa{background:var(--teal)} .pb{background:var(--agent)}
+  .pc{background:var(--amber)} .pd{background:var(--mute)}
+  pre{margin:0;background:#101B2B;color:#D7E3F2;border-radius:9px;padding:14px 16px;
+    font:500 12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;overflow-x:auto}
+  pre .c{color:#7C90AA} pre .k{color:#8FD3FF} pre .v{color:#F3C77B}
+  .foot{margin-top:16px;border-top:2px solid var(--navy);padding-top:11px;
+    font-size:13.5px;font-weight:800;color:var(--navy);text-align:center}
+  .foot span{display:block;margin-top:4px;font-size:12px;font-weight:600;color:var(--mute)}
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+  }
+</style>
+</head>
+<body>
+
+<section class="page">
+  <div class="ph">
+    <span class="k">Base Agent</span>
+    <h2>Test Framework Generator — Design</h2>
+    <span class="s"><code>agents/test_framework/</code> · report the gap, then close it</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box prob">
+      <b class="t">The problem it removes</b>
+      <p class="n">Coverage arrives at the gate as a number in a slide. Nobody can see <em>which</em>
+      modules have no test at all, so the number is an average hiding a hole. And when the gate does
+      find the hole, it hands the work straight back to a team that is already at go-live — which is
+      how assurance earns its reputation as a tax rather than a service.</p>
+    </div>
+    <div class="box prom">
+      <b class="t">The promise</b>
+      <p class="n">Read the harness output as evidence, name the modules with no test file, and — where
+      coverage falls short — <b>write the scaffold back out</b> as a reviewable proposal. The gate stops
+      being a list of complaints and becomes the thing that does some of the work. Absent results are
+      not treated as a pass.</p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Flow</h3>
+    <div class="flow">
+      <div class="fs"><b>Harness runs</b><span>the project's own suite</span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Read results</b><span><code>evidence/tests/results.json</code></span></div>
+      <div class="fa">→</div>
+      <div class="fs"><b>Evidence</b><span>suites · failures · coverage</span></div>
+      <div class="fa">→</div>
+      <div class="fs ok"><b>Rule decides</b><span>FUN-01 · FUN-02</span></div>
+      <div class="fa">→</div>
+      <div class="fs warn"><b>On fail: find gaps</b><span>src modules with no <code>test_*</code></span></div>
+      <div class="fa">→</div>
+      <div class="fs hi"><b>Draft scaffolds</b><span>proposals — never committed</span></div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Interface</h3>
+    <table>
+      <thead>
+        <tr><th style="width:26%">Function</th><th style="width:22%">Input</th><th>Returns</th><th style="width:20%">Consumed by</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>results(project)</code></td>
+          <td><code>evidence/tests/results.json</code></td>
+          <td><code>available · suites · suites_failed · statuses · tests · critical_path_coverage_pct · overall_coverage_pct · failing[]</code></td>
+          <td>Ops Gate <b>FUN-01</b>, <b>FUN-02</b></td>
+        </tr>
+        <tr>
+          <td><code>untested_modules(project)</code></td>
+          <td><code>src/**.py</code> vs <code>test_*.py</code></td>
+          <td>Sorted list of module names with no corresponding test file</td>
+          <td>scaffold generation; gap reporting</td>
+        </tr>
+        <tr>
+          <td><code>propose_scaffold(project)</code></td>
+          <td>the untested list</td>
+          <td>One <code>{path, content}</code> per untested module — three named tests, each <code>pytest.skip</code></td>
+          <td>Ops Gate remediation → <code>.opsgate/remediation/</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="sp d">
+      <h4>Deterministic — including the generation</h4>
+      <p>Parsing results is arithmetic. So is the scaffold: <b>the shape of a test file is knowable, so
+      it is a template</b>, not a prompt. This is the whole thesis in one function — do not reach for a
+      model to produce something a format string produces identically every time.</p>
+    </div>
+    <div class="sp a">
+      <h4>Agentic — the assertions</h4>
+      <p>A model is worth involving only in deciding <em>what the assertions should be about</em> for a
+      given module. That is deliberately left as the open slot, and it is a category&nbsp;B judgement —
+      proposed, never auto-accepted.</p>
+    </div>
+    <div class="sp h">
+      <h4>Human — completing the test</h4>
+      <p>Every generated test is a <code>skip</code> with a TODO. It cannot go green on its own. The
+      engineer writes the assertion; the agent removed only the blank-page problem.</p>
+    </div>
+  </div>
+
+  <div class="foot">
+    A gate that only reports gaps moves work onto the project team. This one hands back the artefact.
+    <span>And the artefact it hands back is honest: a skipped test is visibly incomplete.</span>
+  </div>
+</section>
+
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Backup</span>
+    <h2>Composition, the scaffold, and how it can be gamed</h2>
+    <span class="s">What Ops Gate gets · what the agent refuses to do</span>
+  </div>
+
+  <div class="sect">
+    <h3>Checks it feeds</h3>
+    <table>
+      <thead>
+        <tr><th style="width:52px">Cat</th><th style="width:74px">ID</th><th style="width:28%">Check</th><th style="width:24%">Rule</th><th>Behaviour</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="pill pa">A</span></td><td>FUN-01</td><td>Automated test suite passes</td><td><code>suites_failed == 0</code></td><td>Deployed as a day-2 monitor on every deploy — the same check, still running after handover.</td></tr>
+        <tr><td><span class="pill pa">A</span></td><td>FUN-02</td><td>Critical-path coverage ≥ 80%</td><td><code>critical_path_coverage_pct &gt;= 80</code></td><td>On failure, <code>on_fail.agent: test-framework-generator</code> fires and the scaffolds are written out as proposals.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+      <h3>The generated scaffold</h3>
+<pre><span class="c">"""Generated scaffold for `ingest`.
+Assertions are the author's to complete."""</span>
+
+<span class="k">import</span> pytest
+<span class="k">from</span> src <span class="k">import</span> ingest
+
+
+<span class="k">def</span> <span class="v">test_ingest_happy_path</span>():
+    pytest.skip(<span class="v">"TODO: assert the expected output"</span>)
+
+<span class="k">def</span> <span class="v">test_ingest_rejects_invalid_input</span>():
+    pytest.skip(<span class="v">"TODO: assert the failure mode is raised,
+                 not swallowed"</span>)
+
+<span class="k">def</span> <span class="v">test_ingest_is_idempotent</span>():
+    pytest.skip(<span class="v">"TODO: assert running twice produces
+                 the same result"</span>)</pre>
+    </div>
+    <div class="box tint">
+      <b class="t">Why three tests, and why these three</b>
+      <p class="n" style="margin-bottom:8px">The template encodes what an Ops team actually needs to know
+      about a data module before accepting it: <b>does it work</b>, <b>does it fail loudly rather than
+      silently</b>, and <b>can it be safely re-run</b>. That third one is the reason most data incidents
+      become two incidents.</p>
+      <p class="n">So the scaffold is not a neutral stub — it is the readiness bar expressed as test
+      names. A team that fills in only the happy path has visibly not finished, and the file says so.</p>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">Failure modes of the agent itself</b>
+      <ul class="tight">
+        <li><b>Results are self-reported.</b> The harness output is produced by the project's own pipeline. The gate trusts it as a stated fact, which is why coverage is sampled independently by Ops post-handover — the mitigation is organisational, not technical, and worth saying so.</li>
+        <li><b>Accepting the scaffold silences the gap detector.</b> Once <code>tests/test_ingest.py</code> exists, <code>untested_modules</code> goes quiet even though every test skips. Coverage percentage — not file presence — is what FUN-02 actually gates on, which is why the rule is written against coverage.</li>
+        <li><b>Name-based matching.</b> Modules are paired to tests by filename stem, not by import graph. Cheap, transparent, and wrong for unconventional layouts — a deliberate trade, replaceable without touching the interface.</li>
+        <li><b>No results file</b> → <code>available: false</code> → <code>ERROR</code>. Never a pass.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <b class="t">Reuse beyond Ops Gate</b>
+      <ul class="none">
+        <li><b>Ops Self-Healing</b> — the regression suite is what makes a remediation safe to apply. A fix that passes the same tests the gate ran is a fix; one that does not is a rollback.</li>
+        <li><b>Spark / Databricks Modernization</b> — generate the safety net <em>before</em> refactoring. The tests are what let a modernization be reviewed as equivalent rather than trusted as equivalent.</li>
+        <li><b>Project scaffolding, day one</b> — the same templates run at project start, so the readiness bar is visible on the first commit rather than at handover.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot">
+    The scaffold is deterministic. The assertion is a judgement. The agent does exactly one of those.
+    <span>Generated tests skip by default — remediation must never manufacture assurance.</span>
+  </div>
+</section>
+
+</body>
+</html>
