@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ops Acceptance Checklist — Data Engineering Projects</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .page{max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12)}
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:16px}
+  .ph .k{font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none}
+  .ph .k.bk{background:var(--mute)}
+  .ph h2{margin:0;font-size:clamp(19px,2.1vw,26px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+  h3{margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .sect{margin-bottom:16px}
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px}
+  ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0}
+  ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+  p.n + p.n{margin-top:7px}
+  .prob{border-left:4px solid var(--red);background:#FCF3F2}
+  .prob b.t{color:var(--red)}
+  .prom{border-left:4px solid var(--teal);background:#F1F8F6}
+  .prom b.t{color:var(--teal)}
+
+  /* checklist tables */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;padding:7px 9px;background:var(--navy);color:#fff;
+    font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+  td{padding:6px 9px;border-bottom:1px solid var(--line);color:#33445A;vertical-align:top;line-height:1.45}
+  tr:nth-child(even) td{background:#FAFCFD}
+  td.id{font:700 11.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--navy);white-space:nowrap}
+  th.tk,td.tk{width:26px;padding-left:9px;padding-right:0}
+  td.tk::before{content:"";display:block;width:12px;height:12px;margin-top:2px;
+    border:1.5px solid #A9B7C8;border-radius:3px;background:#fff}
+  code{font:600 12px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;background:#EEF2F7;
+    border-radius:4px;padding:1px 5px;color:#26364B}
+  td code{font-size:11.5px}
+
+  .sev{display:inline-block;border-radius:4px;padding:1px 7px;font-size:10px;
+    font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#fff;white-space:nowrap}
+  .sb{background:var(--red)} .sm{background:var(--amber)} .sn{background:var(--mute)}
+
+  /* section index */
+  .idx{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+  .ix{border:1px solid var(--line);border-radius:9px;padding:9px 11px;background:#fff;
+    display:flex;flex-direction:column;gap:4px}
+  .ix .t{display:flex;align-items:baseline;gap:7px}
+  .ix .t b{font-size:12.5px;font-weight:800;color:var(--navy);letter-spacing:-.01em;line-height:1.25}
+  .ix .t em{font-style:normal;font:700 10px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    color:var(--mute);flex:none}
+  .ix .m{display:flex;gap:4px;align-items:center;font-size:10px;font-weight:700;color:var(--mute)}
+  .ix .m i{font-style:normal;border-radius:3px;padding:0 5px;color:#fff}
+  .ix .m i.b{background:var(--red)} .ix .m i.j{background:var(--amber)} .ix .m i.n{background:var(--mute)}
+
+  .kpi{text-align:center;border:1px solid var(--line);border-radius:10px;padding:12px 10px;background:var(--panel)}
+  .kpi b{display:block;font-size:23px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+  .kpi span{display:block;margin-top:3px;font-size:11.5px;line-height:1.4;color:var(--mute);font-weight:600}
+
+  .foot{margin-top:14px;border-top:2px solid var(--navy);padding-top:10px;
+    font-size:13px;font-weight:800;color:var(--navy);text-align:center}
+  .foot span{display:block;margin-top:4px;font-size:11.5px;font-weight:600;color:var(--mute)}
+
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+    tr{page-break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<!-- ========================= COVER ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">Ops Gate</span>
+    <h2>Ops Acceptance Checklist — Data Engineering Projects</h2>
+    <span class="s">Phase 1 · plain English · 170 items across 16 sections</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box prob">
+      <b class="t">Read every item from the receiving side</b>
+      <p class="n"><b>"Has the project team done this, and is the evidence in our hands?"</b> — not as
+      work for Ops to do. Ops is not closing the gaps here. Ops is establishing whether the gaps exist,
+      and declining to inherit a system whose gaps are unknown.</p>
+      <p class="n">"They said so in a meeting" is not evidence. Every row names the artefact that must
+      physically be handed over or pointed at.</p>
+    </div>
+    <div class="box prom">
+      <b class="t">What this document deliberately does not contain</b>
+      <p class="n">No tooling, no products, no automation. How each item gets verified — by a rule, by an
+      agent assembling material for a human, or by a named signature — is <b>phase&nbsp;2</b>, and doing
+      it now would let the tooling decide the bar.</p>
+      <p class="n">The bar comes first. What can be automated is discovered afterwards, and the share
+      that can be is the maturity measure.</p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>The sixteen sections</h3>
+    <div class="idx">
+      <div class="ix"><div class="t"><em>OWN</em><b>Ownership &amp; support model</b></div><div class="m">10 items <i class="b">7</i><i class="j">2</i><i class="n">1</i></div></div>
+      <div class="ix"><div class="t"><em>FUN</em><b>Functional correctness</b></div><div class="m">8 items <i class="b">4</i><i class="j">4</i></div></div>
+      <div class="ix"><div class="t"><em>DQ</em><b>Data quality &amp; integrity</b></div><div class="m">12 items <i class="b">7</i><i class="j">5</i></div></div>
+      <div class="ix"><div class="t"><em>DEP</em><b>Dependencies &amp; integration</b></div><div class="m">8 items <i class="b">3</i><i class="j">5</i></div></div>
+      <div class="ix"><div class="t"><em>JOB</em><b>Jobs, scheduling &amp; orchestration</b></div><div class="m">13 items <i class="b">6</i><i class="j">5</i><i class="n">2</i></div></div>
+      <div class="ix"><div class="t"><em>CFG</em><b>Configuration &amp; environments</b></div><div class="m">9 items <i class="b">5</i><i class="j">3</i><i class="n">1</i></div></div>
+      <div class="ix"><div class="t"><em>REL</em><b>CI/CD &amp; release</b></div><div class="m">11 items <i class="b">6</i><i class="j">3</i><i class="n">2</i></div></div>
+      <div class="ix"><div class="t"><em>PRF</em><b>Performance, capacity &amp; SLA</b></div><div class="m">10 items <i class="b">3</i><i class="j">5</i><i class="n">2</i></div></div>
+      <div class="ix"><div class="t"><em>RES</em><b>Resilience, failure &amp; recovery</b></div><div class="m">11 items <i class="b">8</i><i class="j">3</i></div></div>
+      <div class="ix"><div class="t"><em>MON</em><b>Monitoring &amp; alerting</b></div><div class="m">16 items <i class="b">9</i><i class="j">6</i><i class="n">1</i></div></div>
+      <div class="ix"><div class="t"><em>SEC</em><b>Security &amp; access</b></div><div class="m">12 items <i class="b">9</i><i class="j">3</i></div></div>
+      <div class="ix"><div class="t"><em>REG</em><b>Compliance &amp; regulatory</b></div><div class="m">9 items <i class="b">7</i><i class="j">2</i></div></div>
+      <div class="ix"><div class="t"><em>FIN</em><b>Cost &amp; FinOps</b></div><div class="m">10 items <i class="b">3</i><i class="j">4</i><i class="n">3</i></div></div>
+      <div class="ix"><div class="t"><em>DOC</em><b>Documentation &amp; runbooks</b></div><div class="m">10 items <i class="b">4</i><i class="j">4</i><i class="n">2</i></div></div>
+      <div class="ix"><div class="t"><em>MNT</em><b>Maintainability &amp; day-2 change</b></div><div class="m">11 items <i class="b">1</i><i class="j">8</i><i class="n">2</i></div></div>
+      <div class="ix"><div class="t"><em>ACC</em><b>Knowledge transfer &amp; acceptance</b></div><div class="m">10 items <i class="b">7</i><i class="j">3</i></div></div>
+    </div>
+  </div>
+
+  <div class="sect grid g4">
+    <div class="kpi"><b>170</b><span>Items in the full bar</span></div>
+    <div class="kpi"><b>89</b><span><span class="sev sb">Blocker</span> no production without it</span></div>
+    <div class="kpi"><b>65</b><span><span class="sev sm">Major</span> accept with a dated plan</span></div>
+    <div class="kpi"><b>16</b><span><span class="sev sn">Minor</span> record it and move on</span></div>
+  </div>
+
+  <div class="foot">
+    A written bar means "no" stops being a personality trait and becomes a reading of a list.
+    <span>Every blocker should be defensible as "this is what we would need at 3am". If it cannot be, it is a Major.</span>
+  </div>
+</section>
+
+<!-- ========================= 1 · OWN ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">1 · OWN</span>
+    <h2>Ownership &amp; support model</h2>
+    <span class="s">An unowned system in production is an incident with a delay fuse</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:74px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">OWN-01</td><td>There is a <b>named production owner</b> — a person, not a team mailbox</td><td>Name, role, and their manager's name</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">OWN-02</td><td>There is a <b>named technical owner</b> who can change the code after handover</td><td>Name, and confirmation they have time allocated</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">OWN-03</td><td>The <b>business owner</b> who cares if the data is wrong is identified</td><td>Name and the decision the data feeds</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">OWN-04</td><td>An <b>on-call rota</b> covers this system, with the hours it is covered</td><td>Rota, effective dates, and who is on it this week</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">OWN-05</td><td>The <b>escalation path</b> is written down — who is called, in what order, after how long</td><td>Escalation matrix with contact routes</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">OWN-06</td><td>The <b>support model</b> is agreed: what Ops handles, what goes back to the project team</td><td>RACI or a one-page support agreement</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">OWN-07</td><td>A <b>warranty / hypercare period</b> is agreed, with an end date and exit criteria</td><td>Dates and what must be true to exit</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">OWN-08</td><td>The system is <b>registered in the service catalogue / CMDB</b></td><td>Record ID</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">OWN-09</td><td>The <b>business criticality tier</b> is assigned and agreed with Ops</td><td>Tier, and the SLA that tier implies</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">OWN-10</td><td>Ops was <b>involved before handover day</b>, not presented with a finished system</td><td>Evidence of earlier design / ops review</td><td><span class="sev sn">Minor</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">OWN-09 is the switch for the whole document — the criticality tier selects which profile of this checklist applies.</div>
+</section>
+
+<!-- ========================= 2 · FUN ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">2 · FUN</span>
+    <h2>Functional correctness</h2>
+    <span class="s">Can anyone demonstrate it works without the original author?</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:74px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">FUN-01</td><td>An <b>automated test suite exists and passes</b> on the release being handed over</td><td>Test run output against the release artefact</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FUN-02</td><td><b>Critical business logic is covered</b> by tests, not just the plumbing</td><td>Coverage report, with the critical paths named</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FUN-03</td><td><b>UAT was completed and signed off</b> by the business owner</td><td>Signed UAT record, dated, with scope</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FUN-04</td><td><b>Known defects are listed and agreed</b>, not discovered later</td><td>Open defect register with severity and owner</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FUN-05</td><td>The system has <b>run successfully in production-like conditions</b> for a meaningful period</td><td>Run history from a pre-production environment</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FUN-06</td><td><b>Historical / backfill data was loaded and validated</b>, if the system needs it</td><td>Backfill record and its validation result</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FUN-07</td><td>Outputs have been <b>reconciled against the source of truth</b> end to end</td><td>Reconciliation result with tolerance and variance</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FUN-08</td><td>The <b>first production run has a defined success criterion</b> Ops can check</td><td>What "good" looks like on day one, in numbers</td><td><span class="sev sm">Major</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">FUN-08 is the cheapest item on this list and the one most often missing — Ops needs to know what a good first run looks like before it happens.</div>
+</section>
+
+<!-- ========================= 3 · DQ ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">3 · DQ</span>
+    <h2>Data quality &amp; integrity</h2>
+    <span class="s">The failure mode unique to data systems: everything is green and the numbers are wrong</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">DQ-01</td><td><b>Data quality rules are declared</b> — and there is more than zero of them</td><td>The rule set, as a file, not a description</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-02</td><td>The rules have a <b>pass threshold</b> agreed with the business owner</td><td>The threshold and who agreed it</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-03</td><td>Rules cover <b>completeness, validity, uniqueness and ranges</b> on key fields</td><td>Rule set mapped to the critical columns</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-04</td><td><b>Source-to-target reconciliation runs routinely</b>, not just once at UAT</td><td>The reconciliation job and its schedule</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-05</td><td>The behaviour on a <b>DQ breach is defined</b> — stop, quarantine, or continue and alert</td><td>Documented policy per severity</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-06</td><td><b>Late-arriving data</b> is handled, and the handling is stated</td><td>Design note and a worked example</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-07</td><td><b>Duplicate and out-of-order records</b> are handled deterministically</td><td>Design note and a worked example</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-08</td><td><b>Schema changes at source</b> are detected rather than silently absorbed</td><td>Detection mechanism and who is notified</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-09</td><td><b>Data freshness expectations</b> are stated — how stale is too stale</td><td>The freshness SLA per dataset</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-10</td><td><b>Row-count and volume expectations</b> are stated, so a silent 90% drop is caught</td><td>Expected volumes and tolerance</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-11</td><td><b>Nulls in business-critical fields</b> have an explicit expected rate</td><td>Per-field expectation</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DQ-12</td><td>Someone is <b>named to triage a DQ failure</b> and decide whether to release the data</td><td>Name or role, and their decision authority</td><td><span class="sev sb">Blocker</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">DQ-01 exists because a pass rate over zero declared rules is a vacuous 100% — the most common way a data handover looks compliant and is not.</div>
+</section>
+
+<!-- ========================= 4 · DEP ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">4 · DEP</span>
+    <h2>Dependencies &amp; integration contracts</h2>
+    <span class="s">Most incidents originate outside the system that gets blamed for them</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:74px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">DEP-01</td><td>Every <b>upstream source is listed</b>, with its owner and contact</td><td>Dependency register</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DEP-02</td><td>Every <b>downstream consumer is listed</b> — who breaks if this stops</td><td>Consumer register with criticality</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DEP-03</td><td>There is an <b>agreed data contract</b> with each source: schema, timing, volume</td><td>The contract or the agreed equivalent</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DEP-04</td><td>Ops will be <b>notified before an upstream change</b>, and the route is agreed</td><td>Change-notification agreement</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DEP-05</td><td>The behaviour when a <b>source is late or unavailable</b> is defined</td><td>Documented policy — wait, skip, use prior, fail</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DEP-06</td><td><b>Third-party and vendor dependencies</b> are identified, with their support terms</td><td>Vendor list with contract and support hours</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DEP-07</td><td><b>Shared platform dependencies</b> are known — clusters, warehouses, gateways</td><td>List, with who else uses them</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DEP-08</td><td>Downstream consumers <b>know the freshness and SLA</b> they are being given</td><td>Published SLA and evidence it was communicated</td><td><span class="sev sm">Major</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">DEP-02 is the item that decides how loud an outage is. A system with unknown consumers has an unknown blast radius.</div>
+</section>
+
+<!-- ========================= 5 · JOB ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">5 · JOB</span>
+    <h2>Jobs, scheduling &amp; orchestration</h2>
+    <span class="s">The section Ops lives in at 3am</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">JOB-01</td><td>Every job's <b>schedule and trigger</b> is documented, including why that window</td><td>Schedule inventory with rationale</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-02</td><td>The <b>dependency order between jobs</b> is explicit, not implied by timing</td><td>Dependency graph</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-03</td><td>Jobs are <b>idempotent</b> — re-running the same job does not duplicate or corrupt</td><td>Statement plus evidence it was tested</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-04</td><td>A failed job can be <b>safely restarted</b>, and the restart procedure is written</td><td>Restart runbook per job</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-05</td><td><b>Partial failure is recoverable</b> — a job that dies halfway leaves a known state</td><td>Design note on transactional boundaries</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-06</td><td><b>Backfill and replay</b> are supported, with the procedure documented</td><td>Backfill runbook and its guard rails</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-07</td><td>Jobs have a <b>timeout / maximum runtime</b>, and something happens when it is hit</td><td>Timeout values and the action on breach</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-08</td><td><b>Concurrent runs are prevented or safe</b> — no accidental double execution</td><td>Locking or concurrency design</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-09</td><td><b>Retry behaviour</b> is defined: how many, how far apart, and when to stop</td><td>Retry policy per job</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-10</td><td>The <b>expected runtime is known</b>, so an overrun is detectable</td><td>Baseline durations from pre-production</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-11</td><td><b>Manual intervention procedures</b> exist for the cases automation cannot cover</td><td>Runbook entries for each known case</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-12</td><td>The <b>run calendar is clear</b> — holidays, month-end, freeze periods</td><td>Calendar and any special handling</td><td><span class="sev sn">Minor</span></td></tr>
+      <tr><td class="tk"></td><td class="id">JOB-13</td><td><b>Job ownership at the individual job level</b> is recorded, for multi-team pipelines</td><td>Owner per job</td><td><span class="sev sn">Minor</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">JOB-03 and JOB-05 are the two that decide whether a 3am failure is a ten-minute restart or a four-hour reconstruction.</div>
+</section>
+
+<!-- ========================= 6 · CFG ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">6 · CFG</span>
+    <h2>Configuration &amp; environments</h2>
+    <span class="s">Environments should differ by config, never by code</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">CFG-01</td><td><b>No credentials or secrets are in code</b>, config files, or notebooks</td><td>Scan result over the repository</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">CFG-02</td><td>Secrets are held in an <b>approved secret store</b>, with rotation defined</td><td>Store location and rotation schedule</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">CFG-03</td><td><b>Configuration is externalised</b> — environments differ by config, not by code</td><td>Config layout, and a diff across environments</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">CFG-04</td><td><b>Environment parity</b> is real: pre-production resembles production meaningfully</td><td>Comparison of the two, with differences listed</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">CFG-05</td><td><b>Infrastructure is defined as code</b>, and the code matches what is deployed</td><td>IaC repository and a drift report</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">CFG-06</td><td>There is <b>no undocumented manual configuration</b> in production</td><td>Confirmation, plus the drift report backing it</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">CFG-07</td><td>The <b>process to change config after handover</b> is agreed — who, how, approved by whom</td><td>Change procedure</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">CFG-08</td><td><b>Environment-specific values</b> are inventoried: endpoints, paths, quotas, accounts</td><td>Configuration inventory</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">CFG-09</td><td><b>Feature flags and toggles</b> are listed, with their production state and owner</td><td>Flag inventory</td><td><span class="sev sn">Minor</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">CFG-06 is the item that catches the go-live weekend — the resource created by hand at 11pm and never written back into code.</div>
+</section>
+
+<!-- ========================= 7 · REL ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">7 · REL</span>
+    <h2>CI/CD &amp; release</h2>
+    <span class="s">Deployment must not be a person following notes</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">REL-01</td><td>All code is in <b>version control</b>, and the handed-over version is tagged</td><td>Repository and the release tag</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-02</td><td>A <b>deployment pipeline exists</b> — deployment is not a person following notes</td><td>Pipeline definition and a successful run</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-03</td><td>The pipeline <b>runs the tests and blocks on failure</b></td><td>Pipeline configuration showing the gate</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-04</td><td>Deployment is <b>repeatable from scratch</b> into an empty environment</td><td>Evidence of a clean deploy</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-05</td><td><b>Rollback has been demonstrated</b>, not asserted</td><td>Record of an executed rollback and its duration</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-06</td><td>The <b>release approval path</b> is defined, and it is not the deploying engineer alone</td><td>Approval process</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-07</td><td><b>Artefacts are versioned and promoted</b>, not rebuilt per environment</td><td>Artefact repository and promotion flow</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-08</td><td><b>Release notes</b> accompany the handover release</td><td>The notes, listing what changed</td><td><span class="sev sn">Minor</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-09</td><td>A <b>hotfix path</b> exists that is faster than the standard release but still gated</td><td>Documented emergency change procedure</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-10</td><td><b>Database and schema migrations</b> are versioned, ordered, and reversible</td><td>Migration tooling and a reversal example</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REL-11</td><td>The <b>branching and merge strategy</b> is documented for whoever maintains it next</td><td>Short written convention</td><td><span class="sev sn">Minor</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">REL-05 will be contested, and it is the one to hold. A rollback nobody has executed is a paragraph, not a control.</div>
+</section>
+
+<!-- ========================= 8 · PRF ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">8 · PRF</span>
+    <h2>Performance, capacity &amp; SLA</h2>
+    <span class="s">Tested at production volume, or not tested</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">PRF-01</td><td>A <b>service level objective is declared</b> — completion time, freshness, or availability</td><td>The SLO, in numbers, with the measurement window</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">PRF-02</td><td>The SLO was <b>agreed with the business owner</b>, not chosen by the engineers alone</td><td>Evidence of agreement</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">PRF-03</td><td>The system was <b>tested at production data volume</b>, not a sample</td><td>Load or volume test result</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">PRF-04</td><td><b>Peak conditions</b> were tested — month-end, year-end, campaign spikes</td><td>Peak test result</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">PRF-05</td><td><b>Expected data growth</b> is stated, with the horizon it remains viable</td><td>Growth projection and headroom estimate</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">PRF-06</td><td>There is <b>headroom in the current sizing</b>, quantified</td><td>Current utilisation against provisioned capacity</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">PRF-07</td><td><b>Behaviour under overload is known</b> — degrade, queue, or fail</td><td>Documented and, ideally, observed</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">PRF-08</td><td><b>Performance baselines are recorded</b>, so future regression is detectable</td><td>Baseline runtimes and resource usage</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">PRF-09</td><td><b>Known performance bottlenecks</b> are declared rather than discovered</td><td>Written list with mitigation status</td><td><span class="sev sn">Minor</span></td></tr>
+      <tr><td class="tk"></td><td class="id">PRF-10</td><td>The <b>cost of meeting the SLA</b> is understood — the SLA is affordable</td><td>Cost implication of the SLO</td><td><span class="sev sn">Minor</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">PRF-08 is what makes every future performance conversation evidence-based rather than a memory of how fast it used to feel.</div>
+</section>
+
+<!-- ========================= 9 · RES ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">9 · RES</span>
+    <h2>Resilience, failure &amp; recovery</h2>
+    <span class="s">What breaks, what happens when it does, and how it comes back</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">RES-01</td><td><b>Failure modes are documented</b> — what can break, and what happens when it does</td><td>Failure mode register</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-02</td><td>The register covers <b>every component in the deployed topology</b>, not just the obvious ones</td><td>Register cross-checked against the architecture</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-03</td><td>Each failure mode has a <b>documented recovery procedure</b></td><td>Runbook entry per failure mode</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-04</td><td><b>RTO and RPO are stated and agreed</b> for this system</td><td>The targets, agreed with the business owner</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-05</td><td><b>Backups exist</b>, with the retention period stated</td><td>Backup configuration</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-06</td><td><b>Restore has actually been tested</b>, and how long it took is known</td><td>Restore test record with duration</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-07</td><td><b>Disaster recovery is defined</b>, at the level the criticality tier requires</td><td>DR plan, and evidence of a test if the tier demands it</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-08</td><td><b>Dependency failure is handled</b> — the system degrades rather than corrupts</td><td>Design note per critical dependency</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-09</td><td>There is a <b>dead-letter or quarantine path</b> for records that cannot be processed</td><td>The mechanism and who reviews it</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-10</td><td><b>Data loss scenarios</b> are identified, with the recovery route for each</td><td>Written analysis</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">RES-11</td><td><b>Single points of failure</b> are declared and consciously accepted</td><td>List, with sign-off on each</td><td><span class="sev sm">Major</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">RES-05 without RES-06 is the most common false control in this document: a backup nobody has restored is a hypothesis.</div>
+</section>
+
+<!-- ========================= 10 · MON ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">10 · MON</span>
+    <h2>Monitoring, alerting &amp; observability</h2>
+    <span class="s">If it fails tonight, does Ops hear it from a monitor or from a user?</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">MON-01</td><td><b>Every failure mode in the RES register has a corresponding alert</b></td><td>Coverage map: failure mode → alert</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-02</td><td><b>Alerts route to the on-call rota</b>, and the route has been tested end to end</td><td>A test alert that actually reached someone</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-03</td><td><b>Every alert has a runbook</b>, linked from the alert itself</td><td>Alert-to-runbook mapping, no gaps</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-04</td><td><b>Job failure raises an alert</b> — no job fails silently</td><td>Alert definitions per job</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-05</td><td><b>Job overrun raises an alert</b>, not just outright failure</td><td>Duration-based alerting</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-06</td><td><b>Data freshness is monitored</b> — a job that succeeds while producing stale data is caught</td><td>Freshness monitor per dataset</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-07</td><td><b>Volume anomalies are monitored</b> — a successful run with 10% of the rows is caught</td><td>Volume monitor with bounds</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-08</td><td><b>Data quality results are monitored continuously</b>, not only at the gate</td><td>DQ monitoring configuration</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-09</td><td><b>Logs are centralised, searchable, and retained</b> for a stated period</td><td>Log destination and retention policy</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-10</td><td>Logs are <b>useful</b> — they identify the run, the stage and the record on failure</td><td>A sample log from a real failure</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-11</td><td>A <b>dashboard exists that Ops can read</b> without knowing the internals</td><td>The dashboard, walked through with Ops</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-12</td><td><b>Alert severity is graded</b>, and severities map to response times</td><td>Severity definitions</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-13</td><td><b>Alert noise has been tuned</b> — no known alerts that fire routinely and get ignored</td><td>Alert history from pre-production</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-14</td><td><b>Nothing alerts to an individual's inbox</b> or a personal channel</td><td>Confirmation of routing targets</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-15</td><td><b>SLO breach is itself alerted</b>, not just component failure</td><td>SLO monitor</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MON-16</td><td><b>Upstream dependency health is visible</b>, so blame is fast to assign</td><td>Dependency monitoring or documented route</td><td><span class="sev sn">Minor</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">MON-06 and MON-07 are the data-specific ones. A green pipeline producing stale or empty output is the outage nobody's dashboard shows.</div>
+</section>
+
+<!-- ========================= 11 · SEC ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">11 · SEC</span>
+    <h2>Security &amp; access</h2>
+    <span class="s">Least privilege, service accounts, and data that cannot leak sideways</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">SEC-01</td><td>Access follows <b>least privilege</b> — no broad or inherited admin rights</td><td>Access review output</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-02</td><td><b>Service accounts are used for automation</b>, never a person's credentials</td><td>Service account inventory with owners</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-03</td><td><b>Credential rotation</b> is defined, scheduled, and will not break the system</td><td>Rotation procedure and schedule</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-04</td><td><b>Data is encrypted</b> in transit and at rest, per policy</td><td>Configuration evidence</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-05</td><td><b>Sensitive and personal data is classified</b>, and the classification is complete</td><td>Classification record per dataset</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-06</td><td>Sensitive fields are <b>masked or tokenised</b> wherever policy requires</td><td>Masking configuration and coverage</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-07</td><td><b>Non-production environments do not hold unmasked production data</b></td><td>Confirmation and how it is enforced</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-08</td><td><b>Access is auditable</b> — who read or changed what is recorded</td><td>Audit log configuration</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-09</td><td>A <b>security review or assessment was completed</b> for this system</td><td>The assessment, dated, with findings closed</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-10</td><td><b>Network exposure is understood</b> — what is reachable from where</td><td>Network diagram or equivalent</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-11</td><td><b>Vulnerability scanning covers this codebase and its dependencies</b></td><td>Latest scan result</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">SEC-12</td><td><b>Joiner / mover / leaver</b> handling for this system's access is covered</td><td>Access management process</td><td><span class="sev sm">Major</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">SEC-03 is the one that breaks systems six months after handover — a rotation nobody tested against a service that caches its credential.</div>
+</section>
+
+<!-- ========================= 12 · REG ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">12 · REG</span>
+    <h2>Compliance &amp; regulatory</h2>
+    <span class="s">Tune to the regulatory context — in GxP this section usually decides the date</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">REG-01</td><td><b>Regulatory applicability is determined</b> — is this system GxP relevant, or not</td><td>Impact assessment, signed and dated</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REG-02</td><td>Where applicable, <b>validation or qualification is complete</b></td><td>Validation documentation</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REG-03</td><td>A <b>data privacy impact assessment</b> is complete where personal data is involved</td><td>DPIA, approved by the data protection officer</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REG-04</td><td><b>Data retention and deletion rules</b> are defined and implemented</td><td>Retention policy and its implementation</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REG-05</td><td><b>Data lineage is documented</b> end to end, source to consumption</td><td>Lineage documentation or captured lineage</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REG-06</td><td><b>Audit trail requirements</b> are met — records of change are kept as required</td><td>Audit configuration</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REG-07</td><td><b>Cross-border data movement</b> is identified and cleared</td><td>Data flow map with jurisdictions</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REG-08</td><td><b>Change control requirements</b> post-handover are understood by Ops</td><td>The applicable change control procedure</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">REG-09</td><td><b>Attestations carry a named signatory, a date and an expiry</b> — none are open-ended</td><td>The attestation records</td><td><span class="sev sb">Blocker</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">This section belongs at project start, not at handover. Arriving here for the first time on acceptance day is how dates slip by quarters.</div>
+</section>
+
+<!-- ========================= 13 · FIN ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">13 · FIN</span>
+    <h2>Cost &amp; FinOps</h2>
+    <span class="s">Ops inherits the bill along with the system</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">FIN-01</td><td>All resources are <b>tagged to a cost centre and this project</b></td><td>Tagging coverage report</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FIN-02</td><td>A <b>budget is set</b>, and someone owns it</td><td>Budget figure and owner</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FIN-03</td><td>The <b>run-rate is known</b> — what this costs per month in steady state</td><td>Cost figure from a representative period</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FIN-04</td><td>The <b>cost per run or per unit of data</b> is known, so growth can be forecast</td><td>Unit economics figure</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FIN-05</td><td><b>Forecast against budget</b> is within an agreed tolerance</td><td>Forecast and variance</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FIN-06</td><td><b>Budget alerts</b> are configured and route to the budget owner</td><td>Alert configuration</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FIN-07</td><td><b>Obvious cost inefficiencies were addressed</b> before handover, not left for Ops</td><td>Optimisation summary or a stated backlog</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FIN-08</td><td><b>Idle and non-production resources shut down</b> outside working hours where possible</td><td>Schedule or a stated exception</td><td><span class="sev sn">Minor</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FIN-09</td><td><b>Cost of the DR and backup posture</b> is included in the run-rate</td><td>Included in the figures</td><td><span class="sev sn">Minor</span></td></tr>
+      <tr><td class="tk"></td><td class="id">FIN-10</td><td>What was <b>decommissioned</b> — the cost this replaces — is stated</td><td>Decommissioning plan and saving</td><td><span class="sev sn">Minor</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">FIN-04 is the item that turns a cost surprise into a forecast. Without unit economics, growth arrives as a bill nobody predicted.</div>
+</section>
+
+<!-- ========================= 14 · DOC ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">14 · DOC</span>
+    <h2>Documentation &amp; runbooks</h2>
+    <span class="s">Could a competent engineer who never met the team operate this from the documents alone?</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">DOC-01</td><td>An <b>architecture document exists and matches what is deployed</b></td><td>The document, dated, with a diagram</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DOC-02</td><td>The <b>data model and data dictionary</b> are documented for the outputs</td><td>Dictionary covering the consumed tables</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DOC-03</td><td><b>Runbooks exist for every routine operational task</b></td><td>Runbook set</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DOC-04</td><td><b>Runbooks are written for someone who did not build the system</b></td><td>Ops has read them and confirmed</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DOC-05</td><td>A <b>troubleshooting guide</b> covers the known failure symptoms</td><td>The guide</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DOC-06</td><td><b>Known issues and workarounds</b> are documented rather than remembered</td><td>Known-issues list</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DOC-07</td><td><b>Design decisions and their rationale</b> are recorded — why it is built this way</td><td>Decision record or design section</td><td><span class="sev sn">Minor</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DOC-08</td><td>Documentation lives <b>where Ops can find it</b>, not in a personal drive</td><td>Location, with Ops access confirmed</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DOC-09</td><td>Documentation has an <b>owner and a review date</b></td><td>Owner and next review</td><td><span class="sev sn">Minor</span></td></tr>
+      <tr><td class="tk"></td><td class="id">DOC-10</td><td>A <b>contact list</b> for every dependency is included</td><td>The list, with routes not just names</td><td><span class="sev sm">Major</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">DOC-04 is verified by reading, not by existence. A runbook only the author can follow is a document, not a control.</div>
+</section>
+
+<!-- ========================= 15 · MNT ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">15 · MNT</span>
+    <h2>Maintainability &amp; day-2 change</h2>
+    <span class="s">Handover is not the end of the system's life — this section is about the next two years</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">MNT-01</td><td>The code follows a <b>stated standard</b>, so a new engineer can work in it</td><td>The standard, and evidence it is applied</td><td><span class="sev sn">Minor</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-02</td><td><b>Dependencies are pinned and inventoried</b></td><td>Dependency manifest</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-03</td><td><b>No dependency is already end-of-life or out of support</b></td><td>Version audit against support dates</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-04</td><td>The <b>upgrade path</b> for platform and runtime versions is known</td><td>Statement of the next forced upgrade and when</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-05</td><td><b>Technical debt taken to hit the date</b> is declared, not hidden</td><td>Debt register with impact</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-06</td><td>The <b>process for a schema change</b> after handover is agreed</td><td>Change procedure covering consumers</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-07</td><td>The <b>test suite is maintainable</b> — it can be run and extended by someone new</td><td>Ops or a third party has run it themselves</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-08</td><td><b>Development environment setup</b> is documented and reproducible</td><td>Setup instructions, followed successfully once</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-09</td><td><b>Reference and lookup data</b> has a maintenance owner and update procedure</td><td>Owner and procedure</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-10</td><td><b>Housekeeping is automated</b> — log rotation, temp cleanup, partition management</td><td>The jobs, scheduled</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">MNT-11</td><td>Anything <b>replaced by this system is decommissioned</b>, with a date</td><td>Decommissioning plan</td><td><span class="sev sn">Minor</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">MNT-03 is the only blocker here, and it earns it: inheriting an out-of-support dependency means inheriting an unplanned migration.</div>
+</section>
+
+<!-- ========================= 16 · ACC ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k">16 · ACC</span>
+    <h2>Knowledge transfer &amp; formal acceptance</h2>
+    <span class="s">Ops operates it before Ops owns it</span>
+  </div>
+  <table>
+    <thead><tr><th class="tk"></th><th style="width:70px">#</th><th style="width:42%">Ops is checking that…</th><th>Handover evidence expected</th><th style="width:82px">Bar</th></tr></thead>
+    <tbody>
+      <tr><td class="tk"></td><td class="id">ACC-01</td><td><b>Walkthrough sessions were held</b> with the Ops team who will run it</td><td>Session record and attendees</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">ACC-02</td><td><b>Ops has operated the system themselves</b> at least once, supervised</td><td>Record of the exercise</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">ACC-03</td><td>Ops has <b>executed a runbook end to end</b> and it worked as written</td><td>Which runbook, and the outcome</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">ACC-04</td><td>A <b>failure was simulated and Ops handled it</b> — the alert fired, the runbook worked</td><td>Record of the drill</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">ACC-05</td><td>Ops has <b>all required access</b> in production, verified before acceptance</td><td>Access confirmed by Ops, not asserted</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">ACC-06</td><td><b>Open items are agreed with dates and owners</b>, not left ambiguous</td><td>Agreed remediation plan</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">ACC-07</td><td>Every <b>exception or waiver has a reason, an approver and an expiry</b></td><td>Waiver register — no blanks, no open-ended entries</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">ACC-08</td><td>The <b>hypercare exit criteria</b> are agreed in advance</td><td>Written criteria and the date</td><td><span class="sev sm">Major</span></td></tr>
+      <tr><td class="tk"></td><td class="id">ACC-09</td><td><b>Acceptance is signed</b> by a named person on the Ops side</td><td>The signed acceptance record</td><td><span class="sev sb">Blocker</span></td></tr>
+      <tr><td class="tk"></td><td class="id">ACC-10</td><td>The signature is <b>against a specific version</b> of the system</td><td>Version or release tag on the acceptance record</td><td><span class="sev sm">Major</span></td></tr>
+    </tbody>
+  </table>
+  <div class="foot">ACC-02 and ACC-03 are the acid test of every other section. If Ops cannot run it with the artefacts provided, the artefacts are not sufficient.</div>
+</section>
+
+<!-- ========================= WORKING NOTES ========================= -->
+<section class="page">
+  <div class="ph">
+    <span class="k bk">Notes</span>
+    <h2>Working notes &amp; what happens next</h2>
+    <span class="s">How to use the list, and phase 2</span>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box">
+      <b class="t">On the severity split — this needs a second pass</b>
+      <p class="n">As graded: <b>89 Blocker · 65 Major · 16 Minor</b>. Over half the list blocking is a
+      tier-1 reading, and if every profile inherits it, the word stops meaning anything.</p>
+      <p class="n">The next edit should be a deliberate down-grading pass per tier, targeting roughly
+      <b>30–40 blockers</b> for a mid-tier system. Grading severity <em>per profile</em> rather than
+      globally is probably the right end state.</p>
+    </div>
+    <div class="box">
+      <b class="t">On the shape of the list</b>
+      <p class="n">170 items is far too many to walk through in a meeting — and that is fine, because it
+      is not a meeting agenda. It is the <b>superset</b> from which a per-project profile is drawn.</p>
+      <p class="n">A tier-1 regulated pipeline uses nearly all of it. An internal reporting job uses a
+      fraction. The profile is selected by the criticality tier agreed in <b>OWN-09</b>, which is why
+      that item sits in the first section.</p>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="box prob">
+      <b class="t">The items that will be contested</b>
+      <p class="n">Expect pushback on <b>RES-06</b> (restore actually tested), <b>REL-05</b> (rollback
+      demonstrated), <b>PRF-03</b> (tested at production volume), and <b>ACC-02 / ACC-03</b> (Ops runs it
+      themselves).</p>
+      <p class="n">All five are contested for the same reason: they require <em>doing</em> the thing
+      rather than describing it. That is precisely why they are on the list, and why conceding them
+      hollows out the rest.</p>
+    </div>
+    <div class="box prom">
+      <b class="t">On rejecting a handover</b>
+      <p class="n">The point of a written bar is that <b>"no" stops being a personality trait and becomes
+      a reading of a list</b>. The conversation moves from judgement to evidence, and the project team can
+      see the bar before they hit it.</p>
+      <p class="n">Every blocker should be defensible as <em>"this is what we would need at 3am"</em>. An
+      item that cannot be defended that way is a Major, not a Blocker.</p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Phase 2 — turning this into a gate <span style="text-transform:none;letter-spacing:0;font-weight:600">(not started)</span></h3>
+    <table>
+      <thead><tr><th style="width:130px">Class</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><b>Auto</b></td><td>A rule over evidence a machine can collect. The verdict is deterministic and reproducible in three years.</td></tr>
+        <tr><td><b>Assembled</b></td><td>An agent gathers and cross-references the material; a human makes the call. Never auto-passed.</td></tr>
+        <tr><td><b>Attested</b></td><td>Cannot be automated. A named person signs, dated, with an expiry.</td></tr>
+        <tr><td><b>Waived</b></td><td>Explicitly not applicable — with a reason, an approver and an expiry. A blank is not a waiver.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="foot">
+    The share of items in <b>Auto</b> is the maturity number, and it is designed to rise release on release.
+    <span>One rule carries over from the implementation and should govern the classification work: <b>nothing passes by absence.</b> An item that cannot be verified is not an item that passed.</span>
+  </div>
+</section>
+
+</body>
+</html>
