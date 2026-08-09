@@ -106,6 +106,16 @@ Each capability has two decks: **architecture** for the room, **design** for the
 
 Present the architecture decks. Open a design deck only if the panel drills.
 
+## Q&A prep
+
+Panel questions with prepared answers live in [qa/](qa/README.md), one folder per topic —
+each with a `framework.md` (the argument to understand) and a `questions.md` (the answers
+to rehearse).
+
+| # | Topic |
+|---|---|
+| 01 | [Integration architecture in the AI era](qa/01-integration-architecture/questions.md) — EIP carried forward, MCP/A2A/skills placed in lineage, the deterministic/agentic test, failure modes |
+
 ## Build repository
 
 Code lives in a separate repo: **DataPlatformSuite** — https://github.com/basantchoudhary/DataPlatformSuite
