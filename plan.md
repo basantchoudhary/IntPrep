@@ -109,12 +109,12 @@ Present the architecture decks. Open a design deck only if the panel drills.
 ## Q&A prep
 
 Panel questions with prepared answers live in [qa/](qa/README.md), one folder per topic —
-each with a `framework.md` (the argument to understand) and a `questions.md` (the answers
-to rehearse).
+each with the argument to understand (`framework.md` + a deck) and the answers to rehearse
+(`questions.md` + a self-test drill page).
 
-| # | Topic |
-|---|---|
-| 01 | [Integration architecture in the AI era](qa/01-integration-architecture/questions.md) — EIP carried forward, MCP/A2A/skills placed in lineage, the deterministic/agentic test, failure modes |
+| # | Topic | Deck | Drill |
+|---|---|---|---|
+| 01 | Integration architecture in the AI era — EIP carried forward, MCP/A2A/skills placed in lineage, the deterministic/agentic test, failure modes | [architecture](qa/01-integration-architecture/integration-architecture.html) | [Q&A](qa/01-integration-architecture/questions.html) |
 
 ## Build repository
 

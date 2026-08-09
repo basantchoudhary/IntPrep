@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Integration Architecture in the AI Era — Q&amp;A Drill</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:22px 18px 60px}
+
+  /* header */
+  header.top{
+    background:#fff;border-radius:12px;padding:24px 28px;margin-bottom:16px;
+    box-shadow:0 1px 3px rgba(20,40,70,.12);border-top:4px solid var(--navy)
+  }
+  header.top h1{margin:0;font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  header.top p.sub{margin:7px 0 0;font-size:14px;font-weight:600;color:var(--teal)}
+  header.top p.how{margin:13px 0 0;font-size:13px;line-height:1.6;color:#33445A}
+  header.top p.how b{color:var(--navy)}
+
+  .bar{display:flex;gap:9px;flex-wrap:wrap;margin-top:16px}
+  .bar button{
+    font:700 12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
+    padding:9px 15px;border-radius:7px;border:1px solid var(--line);background:#fff;
+    color:var(--navy);cursor:pointer
+  }
+  .bar button:hover{background:var(--panel);border-color:#B9CDE8}
+  .bar button.pri{background:var(--navy);border-color:var(--navy);color:#fff}
+  .bar button.pri:hover{background:#1C4A85}
+
+  /* question card */
+  .q{
+    background:#fff;border-radius:12px;margin-bottom:13px;overflow:hidden;
+    box-shadow:0 1px 3px rgba(20,40,70,.1);border-left:4px solid var(--navy)
+  }
+  .q.t3{border-left-color:var(--teal)}
+  .q.t2{border-left-color:var(--amber)}
+  .q.risk{border-left-color:var(--red)}
+
+  .qh{padding:17px 22px 15px}
+  .qn{
+    display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:3px 9px;border-radius:5px;margin-bottom:9px
+  }
+  .q.t3 .qn{background:var(--teal)} .q.t2 .qn{background:var(--amber)} .q.risk .qn{background:var(--red)}
+  .qh h2{margin:0;font-size:18px;font-weight:800;letter-spacing:-.015em;color:var(--ink);line-height:1.35}
+  .test{
+    margin:10px 0 0;font-size:12.5px;line-height:1.55;color:var(--mute);
+    padding-left:11px;border-left:2px solid var(--line)
+  }
+  .test b{color:var(--navy);font-weight:700}
+
+  details{border-top:1px solid #EBF0F5}
+  details > summary{
+    list-style:none;cursor:pointer;padding:11px 22px;background:var(--panel);
+    font-size:11.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--navy);
+    display:flex;align-items:center;gap:8px;user-select:none
+  }
+  details > summary::-webkit-details-marker{display:none}
+  details > summary::before{
+    content:"▶";font-size:9px;color:var(--mute);transition:transform .15s
+  }
+  details[open] > summary::before{transform:rotate(90deg)}
+  details > summary:hover{background:#EAF0F7}
+  .ans{padding:16px 22px 18px}
+  .ans p{
+    margin:0 0 11px;font-size:14.5px;line-height:1.62;color:#22303F;
+    padding-left:14px;border-left:3px solid #DDE6F0
+  }
+  .ans p:last-child{margin-bottom:0}
+  .ans p b{color:var(--navy)}
+  .ans p em{font-style:italic;color:var(--mute)}
+
+  .drills{padding:0 22px 18px}
+  .drills h4{
+    margin:0 0 9px;font-size:10.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--mute)
+  }
+  .dr{
+    border:1px solid var(--line);border-radius:8px;padding:10px 13px;margin-bottom:7px;background:#FAFCFE
+  }
+  .dr:last-child{margin-bottom:0}
+  .dr .qq{display:block;font-size:12.5px;font-weight:700;color:var(--red);margin-bottom:4px}
+  .dr .aa{display:block;font-size:12.5px;line-height:1.55;color:#33445A}
+  .dr .aa b{color:var(--navy)}
+
+  mark{background:#FBF2D9;color:inherit;padding:0 3px;border-radius:3px;font-weight:700}
+  .ph{
+    background:#F5F1FB;color:var(--agent);padding:1px 6px;border-radius:4px;
+    font-weight:800;font-size:.92em;white-space:nowrap
+  }
+
+  /* section divider */
+  .div{
+    margin:26px 0 13px;font-size:11px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:var(--mute);display:flex;align-items:center;gap:12px
+  }
+  .div::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* one-liners */
+  .liners{background:#fff;border-radius:12px;padding:22px 26px;box-shadow:0 1px 3px rgba(20,40,70,.1);border-top:4px solid var(--teal)}
+  .liners h2{margin:0 0 4px;font-size:20px;font-weight:800;color:var(--navy);letter-spacing:-.02em}
+  .liners p.s{margin:0 0 16px;font-size:13px;color:var(--mute)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{
+    text-align:left;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--mute);padding:0 10px 7px;border-bottom:1.5px solid var(--line)
+  }
+  td{padding:9px 10px;border-bottom:1px solid #EBF0F5;line-height:1.55;color:#22303F;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td.k{font-weight:700;color:var(--navy);width:22%;white-space:nowrap}
+  td.v{font-weight:600}
+
+  .note{
+    margin-top:16px;background:#FBF5E9;border:1px solid #E4CE9E;border-radius:10px;padding:14px 17px
+  }
+  .note b{color:var(--amber);display:block;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+  .note p{margin:0;font-size:13px;line-height:1.6;color:#33445A}
+
+  @media print{
+    @page{size:portrait;margin:12mm}
+    body{background:#fff}
+    .wrap{max-width:none;padding:0}
+    .bar{display:none}
+    .q,.liners,header.top{box-shadow:none;border:1px solid var(--line);page-break-inside:avoid}
+    details > summary{display:none}
+    details{border-top:none}
+    .ans{padding-top:4px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <h1>Integration Architecture in the AI Era</h1>
+  <p class="sub">Panel Q&amp;A drill — Senior Solution Engineer, EAI</p>
+  <p class="how">
+    Answers are collapsed by design. <b>Read the question, say your answer out loud, then open the card
+    and compare.</b> Reading the answers straight through feels productive and isn't — the gap between
+    recognising a good answer and producing one under pressure is the whole game.
+    Each answer is written to run <b>60–90 seconds</b> spoken.
+    <span class="ph">[bracketed]</span> values are placeholders for real numbers from the evidence bank.
+  </p>
+  <div class="bar">
+    <button class="pri" onclick="document.querySelectorAll('details').forEach(d=>d.open=true)">Open all answers</button>
+    <button onclick="document.querySelectorAll('details').forEach(d=>d.open=false)">Collapse all</button>
+    <button onclick="window.print()">Print</button>
+  </div>
+</header>
+
+<div class="div">Framing</div>
+
+<!-- Q1 -->
+<div class="q">
+  <div class="qh">
+    <span class="qn">Q1</span>
+    <h2>"How has AI changed how you approach solution architecture?"</h2>
+    <p class="test"><b>What they're testing:</b> whether you have judgement or just vocabulary. The wrong
+    answer is an enthusiastic list of agent frameworks.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>Less than people expect — and the part that changed is very specific.</p>
+    <p>Integration has always been the same question: <b>how do independent systems interact safely across
+    a boundary neither of them controls.</b> That's unchanged. What changed is the cast. We used to have
+    software systems integrating with software systems, with humans at the edges. Now there are three
+    classes of participant — software systems, agentic systems and human systems — and every pair of them
+    is an integration surface that needs a contract, a failure mode and an owner.</p>
+    <p>So my architecture is the pre-AI architecture, extended. Same integration styles — <mark>a tool call
+    is RPC, agent-to-agent delegation is messaging, there's no new fifth style</mark>. Same loose coupling,
+    same contract-first discipline, same blast-radius thinking. Plus one new endpoint type that is
+    non-deterministic, and therefore has to be <b>contained by deterministic structure</b> rather than
+    trusted.</p>
+    <p>If I had to name what genuinely broke, it's six assumptions: the caller is no longer deterministic;
+    consumers are no longer known at design time; contracts can no longer be purely syntactic; data is no
+    longer inert; behaviour now changes without a code diff; and a passing test no longer proves anything
+    on its own. Everything I've designed in the last <span class="ph">[N]</span> months is a response to
+    those six.</p>
+  </div></details>
+  <div class="drills">
+    <h4>Follow-up drills</h4>
+    <div class="dr"><span class="qq">"Isn't that a bit conservative?"</span><span class="aa">It's what lets me put an agent into a GxP-relevant path <b>at all</b>. The conservative bit is the containment; the ambition is in what we're then allowed to automate.</span></div>
+    <div class="dr"><span class="qq">"Give me one of the six that bit you."</span><span class="aa">Have a real story ready — ideally the <b>model-version-bump-with-no-code-diff</b> one, because it's the one nobody anticipates.</span></div>
+  </div>
+</div>
+
+<!-- Q2 -->
+<div class="q">
+  <div class="qh">
+    <span class="qn">Q2</span>
+    <h2>"What's your view on MCP, A2A and skills? Are they the future of integration?"</h2>
+    <p class="test"><b>What they're testing:</b> whether you can place new technology in a lineage rather
+    than being impressed by it.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>They're important, and they're less novel than the noise suggests — which is exactly why I'm
+    comfortable adopting them.</p>
+    <p><b>MCP is the JDBC moment for tools.</b> Before JDBC every application wrote a bespoke adapter per
+    database; MCP does the same collapse for model-to-tool integration — one protocol instead of N×M
+    adapters, with discovery and semantic description travelling with the contract. <b>A2A</b> is a
+    service registry plus asynchronous messaging, applied to agents. <b>Skills</b> are a library or a
+    runbook, packaged so it can be loaded on demand.</p>
+    <p>But I'd stress where the JDBC analogy breaks, because that's the important part. JDBC exposed one
+    resource type with one semantics, and its caller was deterministic code a reviewer had read. MCP
+    exposes <b>arbitrary side effects to a probabilistic caller</b>. So it standardises transport,
+    discovery and packaging — it does not give you authorisation, validation, idempotency, budget control,
+    dead-lettering or audit. Those are still mine to design, and they're still the Enterprise Integration
+    Patterns catalogue.</p>
+    <p>So: yes, adopt them, because N×M bespoke adapters is a dead end and standardisation is genuinely
+    valuable. But <mark>the protocol is the easy half</mark>. The validating adapter behind it is where the
+    engineering is.</p>
+  </div></details>
+  <div class="drills">
+    <h4>Follow-up drills</h4>
+    <div class="dr"><span class="qq">"Would you standardise on MCP across the estate?"</span><span class="aa">Yes for tool exposure — with a <b>house adapter template</b> so every MCP server inherits authz, validation, budget and audit by construction rather than per team. That template is the reusable asset.</span></div>
+    <div class="dr"><span class="qq">"What if the standard changes?"</span><span class="aa">It's a transport binding behind our own capability contract. We'd <b>re-bind, not re-architect</b>. That's the point of the boundary.</span></div>
+  </div>
+</div>
+
+<div class="div">The differentiating argument</div>
+
+<!-- Q3 -->
+<div class="q t2">
+  <div class="qh">
+    <span class="qn">Q3 · the one to be crispest on</span>
+    <h2>"Everyone's building agents. How do you decide what should be an agent and what shouldn't?"</h2>
+    <p class="test"><b>What they're testing:</b> the differentiating answer. This is the strongest single
+    point available — most candidates demo an agent that <em>decides</em>.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>I use a three-part test, and all three have to be true before an LLM is allowed in.</p>
+    <p><b>One</b> — is the input space genuinely unbounded? If the inputs can be enumerated or schematised,
+    it's a rule. <b>Two</b> — does it need judgement rather than lookup? If the mapping from input to
+    output can be written as a rule, a query or a conventional model, write that. <b>Three</b> — is a wrong
+    answer survivable, because something deterministic or a human checks it before it has effect?</p>
+    <p>Fail any one and it's code. Fail the third specifically and <mark>the model must never be the final
+    authority</mark>, no matter how good it gets.</p>
+    <p>In practice this produces a consistent shape: <b>observe, propose, validate, execute, record.</b>
+    Observe is deterministic — telemetry, logs, catalog, code, IaC. Propose is the LLM, interpreting the
+    unfamiliar. Validate, execute and record are deterministic again — schema and policy checks,
+    blast-radius and cost limits, human gate by action class, idempotent execution, immutable evidence.
+    Four of five stages are deterministic. The model gets the one stage where judgement is real, and has
+    no authority in any other.</p>
+    <p>The anti-pattern I actively push back on is <b>agent-washing</b> — wrapping a deterministic workflow
+    in an LLM so it can be called agentic. The tell is that the prompt enumerates the rules. If you can
+    write the prompt as an exhaustive list of rules, you've just written the code — ship the code.</p>
+  </div></details>
+  <div class="drills">
+    <h4>Follow-up drills</h4>
+    <div class="dr"><span class="qq">"Sounds like you're under-using AI."</span><span class="aa">It's using AI where it wins and code where code wins. It's a <b>cost, latency and assurance conclusion</b>, not scepticism — and it's precisely why I can put an agent in a regulated path at all.</span></div>
+    <div class="dr"><span class="qq">"Where did you apply the test and change your mind?"</span><span class="aa">Have one example <b>each way</b> — one proposal you killed down to a rule, and one where the test said <em>yes</em> and you built it. The second matters as much as the first: it proves you're not just the person who says no.</span></div>
+  </div>
+</div>
+
+<div class="div">Risk, security &amp; failure</div>
+
+<!-- Q4 -->
+<div class="q risk">
+  <div class="qh">
+    <span class="qn">Q4</span>
+    <h2>"Walk me through the riskiest edge in an agentic architecture."</h2>
+    <p class="test"><b>What they're testing:</b> whether you can <b>prioritise</b> risk rather than list it.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p><b>Agent to system of record.</b> It's the only edge where a probabilistic caller touches something
+    that matters, and it's where I spend the design budget.</p>
+    <p>Three rules. <b>First</b>, the agent never gets raw access — no direct SQL, no admin API, no shell on
+    the box. <mark>Shared-database integration was already an anti-pattern between two deterministic
+    services; it doesn't become acceptable because the caller is now an LLM.</mark> It gets a capability
+    instead: a narrow, purposeful, validated tool.</p>
+    <p><b>Second</b>, every tool has to be independently safe. Pre-AI I could reason that endpoint B is only
+    ever called after endpoint A, because I'd read the calling code. An agent composes tools in orders
+    nobody anticipated — so "safe only when called after X" is not a property I'm allowed to rely on any
+    more.</p>
+    <p><b>Third</b>, blast radius equals the union of what every tool in that agent's scope can reach — not
+    what it's <em>likely</em> to do, what it <em>can</em> do. So I scope tools and credentials, not
+    intentions. Instructions and prompts are guidance; the credential and the tool list are the control.
+    "We told the agent not to" has never been an acceptable answer to a security architect, and it isn't
+    one here.</p>
+  </div></details>
+  <div class="drills">
+    <h4>Follow-up drills</h4>
+    <div class="dr"><span class="qq">"How do you handle an agent that needs broad access?"</span><span class="aa">It doesn't get one agent with broad access — it gets several narrowly-scoped agents and a <b>deterministic orchestrator</b> holding the composition. Bulkhead by scope: one agent, one purpose, one credential, one budget.</span></div>
+    <div class="dr"><span class="qq">"What about read-only agents?"</span><span class="aa">Lower risk, not no risk — exfiltration and injection still apply. But read-only is <b>where I start every capability</b>, and a lot of them stay there and are still valuable.</span></div>
+  </div>
+</div>
+
+<!-- Q5 -->
+<div class="q risk">
+  <div class="qh">
+    <span class="qn">Q5</span>
+    <h2>"How do you secure this? What's new in the threat model?"</h2>
+    <p class="test"><b>What they're testing:</b> the security-partner conversation — T3 names security
+    explicitly as an audience she must be credible with.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>Three things are genuinely new, and each maps to something we already know how to do.</p>
+    <p><b>Prompt injection</b> is the big one, and the honest framing is that it's this generation's SQL
+    injection: untrusted data crossing into the control path. Same shape, same fix direction — separate
+    control from data, treat retrieved content as tainted, never let it reach the instruction path
+    unmediated. But the difference matters: with SQLi we got parameterised queries, a complete structural
+    fix. <mark>There is no equivalent complete fix here yet.</mark> So my primary defence isn't detection,
+    it's <b>capability scoping</b> — assume the agent can be hijacked and make sure a hijacked agent still
+    can't do much. That's a design stance, not a filter.</p>
+    <p><b>Second, identity.</b> The agent is a principal. It needs its own non-human identity, short-lived
+    credentials, and delegated on-behalf-of authority that can never exceed the requesting human's own
+    scope. Otherwise you've built a privilege-escalation service.</p>
+    <p><b>Third, the audit question changes.</b> Pre-AI I logged what happened. Now I have to log
+    <em>why</em> — inputs, model version, prompt version, tool calls, outputs. The decision trace, not just
+    the result. Without that you cannot explain a decision six months later, and in a regulated estate
+    that's disqualifying.</p>
+  </div></details>
+  <div class="drills">
+    <h4>Follow-up drills</h4>
+    <div class="dr"><span class="qq">"Can you stop prompt injection?"</span><span class="aa">No — and I'd be wary of anyone who says they can. I can <b>bound the consequence</b>. That's the design goal: containment, not perfect detection.</span></div>
+    <div class="dr"><span class="qq">"Multi-agent makes this worse?"</span><span class="aa">Yes. Provenance and confidence travel with the message, validation at each hop, delegation depth capped, and delegated authority strictly a <b>subset</b> of the delegator's.</span></div>
+  </div>
+</div>
+
+<!-- Q11 moved up: failure modes -->
+<div class="q risk">
+  <div class="qh">
+    <span class="qn">Q6</span>
+    <h2>"What are the failure modes you design for?"</h2>
+    <p class="test"><b>What they're testing:</b> T1 names <em>"designing for resilience, failure modes"</em>
+    explicitly. This is a named gap in the plan — the North Star is a capability map, not a failure
+    analysis.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>I'd separate the ones we already knew from the ones that are genuinely new.</p>
+    <p>The classic ones don't go away — partial failure, timeout, retry storms, poison messages, cascading
+    dependency failure. Bulkheads, circuit breakers, dead-letter channels, idempotency. Unchanged.</p>
+    <p>New ones, with the control against each. <b>Hallucinated or malformed calls</b> — strict schema plus
+    semantic precondition checks in the adapter, and <em>reject rather than coerce</em>, because coercing a
+    wrong call into a valid one is how you get a confidently wrong action. <b>Prompt injection</b> — trust
+    tiering and capability scoping, so a hijacked agent is contained. <b>Runaway loops and cost</b> — hard
+    caps on depth, calls, tokens and wall-clock, with budget as a contract term rather than an
+    afterthought. <b>Over-broad authority</b> — one agent, one scope, one credential. <b>Silent model
+    drift</b> — pinned versions and an eval gate. <b>Non-reproducibility</b> — the full decision trace
+    logged, not just the outcome. And <b>human gate fatigue</b>, which is a real failure mode people don't
+    list: an overloaded approver is a failed control even when the audit trail looks immaculate.</p>
+    <p>The one I'd single out is <b>idempotency</b>. It was good practice before; it's mandatory now,
+    because agents retry and re-plan, and <mark>a non-idempotent tool turns a retry into a duplicate
+    payment</mark>. Every irreversible action needs an idempotency key and a defined compensating action —
+    or it needs a human, and that's a legitimate answer.</p>
+  </div></details>
+</div>
+
+<div class="div">Assurance &amp; the human boundary</div>
+
+<!-- Q7 -->
+<div class="q t2">
+  <div class="qh">
+    <span class="qn">Q7</span>
+    <h2>"How do you test and assure something non-deterministic?"</h2>
+    <p class="test"><b>What they're testing:</b> T2 — and it's the most common place candidates fall apart.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>By making sure the non-deterministic part is <b>small</b> and the boundary around it is
+    deterministic — then testing each differently.</p>
+    <p>The deterministic four-fifths gets conventional testing: unit, integration, contract, data tests.
+    Unchanged, and it's most of the system by design.</p>
+    <p>The model step gets <b>evaluation</b> rather than testing. A golden set of representative cases,
+    scored against a threshold, run in CI as a gate — so behaviour regression blocks a release the same way
+    a failing test does. The critical detail is that <b>the model version and the prompt version are pinned
+    and treated as versioned dependencies</b>. A model upgrade is a dependency upgrade: it goes through the
+    eval gate and it canaries. The failure mode nobody plans for is behaviour changing with a zero-line
+    code diff, and pinning plus evals is the only thing that catches it.</p>
+    <p>And then the structural argument, which is the one that actually satisfies assurance: the model's
+    output is a <em>proposal</em>, and everything with an effect is validated deterministically afterwards.
+    So the assurance question stops being <mark>"is the model always right"</mark>, which is unanswerable,
+    and becomes <mark>"is the validation complete"</mark> — which is a normal engineering question with a
+    normal engineering answer.</p>
+    <p>On our Ops Gate that's <span class="ph">[N]</span> checks, all deterministic, producing a signed
+    evidence bundle by construction rather than assembled before an audit.</p>
+  </div></details>
+  <div class="drills">
+    <h4>Follow-up drills</h4>
+    <div class="dr"><span class="qq">"What's your eval pass bar?"</span><span class="aa">Set per capability by consequence; irreversible-effect paths carry a higher bar <b>and</b> a human gate regardless of score. Have your real number.</span></div>
+    <div class="dr"><span class="qq">"Who owns the golden set?"</span><span class="aa">The <b>domain owner</b>, not the engineer — otherwise it tests what we built rather than what's needed.</span></div>
+  </div>
+</div>
+
+<!-- Q8 -->
+<div class="q t2">
+  <div class="qh">
+    <span class="qn">Q8</span>
+    <h2>"How do you handle human-in-the-loop without it becoming a bottleneck?"</h2>
+    <p class="test"><b>What they're testing:</b> whether HITL is <b>architecture</b> to you or UX bolted on
+    at the end.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>By making the gate a <b>lookup</b> instead of a judgement call, so it can be sized.</p>
+    <p>Every tool carries a side-effect class in its contract: <b>read, write-reversible,
+    write-irreversible, privileged.</b> Read is automatic. Reversible writes are automatic within budget and
+    logged. Irreversible writes — delete, send, pay, publish — always take a human. Privileged actions take
+    a human plus a second reviewer. Once that's in the contract, the gate isn't argued per project; it's
+    derived. That's what makes it both auditable and reusable.</p>
+    <p>And gate density becomes an architectural decision rather than an accident. <mark>A human gate that
+    produces four hundred approvals a day isn't a control, it's a rubber stamp with extra steps</mark> — so
+    I size it deliberately, and I treat approval dwell time as a health metric. If approvals are being
+    cleared in two seconds, the control has failed even though the audit trail looks perfect.</p>
+    <p>The other half is treating the human as a typed participant. They receive a structured object —
+    proposed action, evidence, blast radius, reversibility, cost, expiry — not a chat message. There's a
+    timeout, and <b>the default on timeout is deny</b>, never proceed. There's an escalation path and a
+    safe-park state, because "the approver is on leave" is a failure mode you design for, not discover.</p>
+    <p>Underneath all of it: the agent assembles the evidence, a named person signs. That boundary isn't a
+    limitation of today's models that we relax later. It's <b>where accountability lives</b>, and
+    accountability doesn't move because the model improves.</p>
+  </div></details>
+  <div class="drills">
+    <h4>Follow-up drills</h4>
+    <div class="dr"><span class="qq">"What if the business wants full automation?"</span><span class="aa">Reversible actions can go fully automatic and often should. The line is <b>reversibility and regulatory relevance</b>, not ambition — and I'll move the line as evidence accumulates, per action class, with data.</span></div>
+  </div>
+</div>
+
+<div class="div">Estate, scale &amp; longevity</div>
+
+<!-- Q9 -->
+<div class="q">
+  <div class="qh">
+    <span class="qn">Q9</span>
+    <h2>"How do agents work with a large legacy estate — huge codebases, unclear dependencies?"</h2>
+    <p class="test"><b>What they're testing:</b> whether you have a real answer rather than "a bigger
+    context window".</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>The agent has exactly the problem a new engineer has: it can't see upstream and downstream
+    consequence. And the answer is the same answer, which I find reassuring rather than disappointing —
+    <b>lineage, contracts and a dependency graph as queryable assets</b>, not as a diagram in a slide deck.
+    <mark>If the blast radius of a change is computable, both the human and the agent get it right. If it
+    isn't, neither will.</mark> That's not an AI problem, it's an estate-legibility problem that AI has
+    finally put a price on.</p>
+    <p>So the work is: machine-readable contracts, a catalog with lineage, decision records so the agent
+    doesn't "fix" a deliberate constraint, small modules with explicit dependencies, tests as the
+    specification, and repo-level convention files that give a code-writing agent its behavioural
+    contract.</p>
+    <p>The reframe I'd offer is that <b>none of that is agent-specific</b>. Every one of those assets serves
+    a human joining the team just as well. I don't write documentation for agents — documentation drifts
+    and nobody trusts it. I make the system self-describing, in CI, where it can't drift. Both audiences
+    get served by the same artefact, and the business case for hygiene that was always right but always
+    deferred is suddenly easy to make.</p>
+    <p>That's essentially what our reverse-engineering base agent does — recover an accurate model of a
+    handed-over estate — and it's the first thing the Ops Gate runs.</p>
+  </div></details>
+  <div class="drills">
+    <h4>Follow-up drills</h4>
+    <div class="dr"><span class="qq">"Reverse-engineering is exactly where the model will hallucinate."</span><span class="aa">Which is why its output is a <b>proposal checked against ground truth</b> — the deployed resources, the actual IaC, the observed lineage. It accelerates discovery; it doesn't get to assert facts.</span></div>
+    <div class="dr"><span class="qq">"Won't the agent just make the codebase worse?"</span><span class="aa">Tests as the safety net, sandbox validation before apply, change size capped. <b>Same controls we'd want on a contractor's first PR.</b></span></div>
+  </div>
+</div>
+
+<!-- Q10 -->
+<div class="q">
+  <div class="qh">
+    <span class="qn">Q10</span>
+    <h2>"Agent-to-agent — is that real, or is one agent enough?"</h2>
+    <p class="test"><b>What they're testing:</b> hype resistance, and whether you understand distributed
+    systems.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>It's real where it's a genuine separation of concerns, and theatre where it's one problem chopped up
+    for a diagram.</p>
+    <p>The justification for splitting agents is the same as for splitting services: <b>different scope,
+    different data sensitivity, different credentials, different owner, different release cadence.</b> Our
+    Ops Gate composes four base agents for exactly that reason — the sandbox creator, the test scaffolder,
+    the data-expectation agent and the reverse-engineering agent all have different blast radii and
+    different ownership. That split is bulkheading, and it's the reuse story too: the composite
+    capabilities were assembled from those base agents rather than built from scratch.</p>
+    <p>What I'd resist is multi-agent as a <em>performance</em> strategy — five agents chatting to reach an
+    answer one could have reached. That's cost, latency and an unbounded failure surface bought for a
+    diagram.</p>
+    <p>And when I do split, I treat it as untrusted inter-service messaging, because that's what it is.
+    Authenticate the caller, carry provenance and confidence in the message, validate at every hop rather
+    than only the first, cap delegation depth, and make delegated authority strictly a subset of the
+    delegator's. Otherwise a wrong output from agent one becomes an established fact for agents two, three
+    and four — which is the cascading failure mode, and it's the same class of problem as
+    <mark>trusting an internal service just because it's inside the perimeter. We learned that lesson
+    once already.</mark></p>
+  </div></details>
+</div>
+
+<!-- Q11 -->
+<div class="q">
+  <div class="qh">
+    <span class="qn">Q11</span>
+    <h2>"How do you avoid lock-in to a model vendor?"</h2>
+    <p class="test"><b>What they're testing:</b> enterprise-architecture credibility — and whether you can
+    state a trade-off honestly instead of claiming abstraction is free.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>By treating the model as what it is — <b>a versioned third-party dependency with a vendor, a price,
+    a drift profile and an exit cost.</b> Same as a database.</p>
+    <p>Practically: the model sits behind our own capability contract, so the application depends on
+    "summarise this incident with this schema", not on a specific provider's SDK. Prompts and evals are
+    versioned assets in the repo, not embedded in application code. <b>The eval suite is the portability
+    test</b> — it's how I know in an afternoon whether an alternative model clears the bar, rather than it
+    being a research project.</p>
+    <p>I'd also be straight about the trade-off, because pretending it's free isn't credible. Full
+    abstraction costs you provider-specific capability, and some of that capability is genuinely valuable.
+    So I abstract at the <b>capability boundary, not at every feature</b> — and where I do use something
+    provider-specific I make it a deliberate, recorded decision with a known replacement cost, rather than
+    something that leaked in.</p>
+    <p>The deeper point is that most of my system doesn't call a model at all. Four of five stages are
+    deterministic. <mark>Lock-in exposure is proportional to how much of the architecture you handed to the
+    model</mark> — which is one more reason the deterministic-first position is an engineering position
+    rather than a philosophical one.</p>
+  </div></details>
+</div>
+
+<div class="div">Leadership, reuse &amp; stakeholders</div>
+
+<!-- Q12 -->
+<div class="q t3">
+  <div class="qh">
+    <span class="qn">Q12 · the T3 grade-bar question</span>
+    <h2>"What reusable patterns have you established?"</h2>
+    <p class="test"><b>What they're testing:</b> the grade bar directly — <em>"recognised as a go-to
+    technical authority… multiple reusable patterns."</em> <b>This answer lives or dies on the numbers.</b></p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>Four — and the important thing about them is that they were <b>extracted from delivery, not designed
+    in the abstract</b>.</p>
+    <p><b>First, the participant model</b> — the three classes and the nine integration edges, with a named
+    contract and failure mode per edge. It started as how I explained one design and became the reference
+    framing for <span class="ph">[N]</span> engagements.</p>
+    <p><b>Second, the deterministic/agentic test</b> — the three-part rule for whether something is allowed
+    to be an LLM. That's now the intake question on new agentic proposals, and it's converted
+    <span class="ph">[N]</span> of them into deterministic solutions that shipped faster and passed
+    assurance.</p>
+    <p><b>Third, side-effect classification driving human gating.</b> That's the one security and compliance
+    picked up, because it turns the approval decision into a lookup they can audit rather than a judgement
+    they have to trust.</p>
+    <p><b>Fourth, the agent control plane itself</b> — registry, delegated identity, policy, budgets, eval
+    harness, audit. It's identical across all four of our agents, which is the actual proof: the second
+    capability took <span class="ph">[X%]</span> of the effort of the first, because everything except the
+    judgement step already existed.</p>
+    <p>And the Ops Gate is shipped as a <b>skill</b> specifically so another team can adopt it without me —
+    <span class="ph">[N]</span> have. That's the test I hold myself to. <mark>A pattern that needs its
+    author present isn't reusable — it's a consultancy engagement.</mark></p>
+  </div></details>
+  <div class="drills">
+    <h4>Follow-up drills</h4>
+    <div class="dr"><span class="qq">"How do you get people to adopt patterns?"</span><span class="aa"><b>Golden path, not documentation.</b> Make the compliant path the easy path — a template that already carries authz, validation, budget and audit. Adoption follows convenience, never mandate.</span></div>
+    <div class="dr"><span class="qq">"Who's disagreed with you on one of these?"</span><span class="aa">Have a real one, and how it <b>improved</b> the pattern. Recognised authority means people push back and you incorporate it.</span></div>
+  </div>
+</div>
+
+<!-- Q13 -->
+<div class="q t3">
+  <div class="qh">
+    <span class="qn">Q13</span>
+    <h2>"A senior stakeholder wants everything agentic. How do you handle that?"</h2>
+    <p class="test"><b>What they're testing:</b> T3 — stakeholder engagement, and whether you can
+    <b>disagree well</b>.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p>I don't argue the philosophy, I run an intake — because a procedure is reusable and an opinion isn't,
+    and people accept a process they can see applied consistently to everyone.</p>
+    <p>Four questions. <b>Can this be a rule? What's the side-effect class of everything it can touch?
+    What's the blast radius if it's completely wrong, and how is that bounded? How is it evaluated, and
+    what does regression look like?</b></p>
+    <p>That conversation usually ends somewhere better than either starting position: a smaller agent, a
+    bigger deterministic surface, and a capability that actually passes assurance and ships. It also
+    reframes the disagreement — <mark>I'm not the person blocking AI, I'm the person getting it into
+    production</mark>, and the constraint is what makes that possible.</p>
+    <p>The one thing I'd never do is win the argument quietly by building it my way. If a stakeholder wants
+    the agentic version and accepts the assurance position, that's a legitimate decision and it's theirs to
+    make. My job is to make sure the trade-off is explicit and recorded, and to design the containment
+    properly either way. Where I hold firm is a very narrow line: <b>a model doesn't give the final
+    approval on regulated change.</b> That isn't a preference, and it isn't mine to trade.</p>
+  </div></details>
+</div>
+
+<!-- Q14 -->
+<div class="q t3">
+  <div class="qh">
+    <span class="qn">Q14</span>
+    <h2>"If you had to give one piece of architectural advice to a team starting on agents?"</h2>
+    <p class="test"><b>What they're testing:</b> mentoring instinct — T3 names it. Also a gift of a closing
+    line if it comes late in the interview.</p>
+  </div>
+  <details><summary>Answer</summary><div class="ans">
+    <p><b>Design the boundary before you design the agent.</b></p>
+    <p>Teams start with the prompt and the framework, and the first serious question — <em>what can this
+    thing actually reach, and what happens when it's wrong</em> — arrives during a security review, when
+    it's expensive. If you start from the other end, from side-effect class and blast radius and what the
+    human signs, the agent almost designs itself and it's a lot smaller than you expected.</p>
+    <p>The second thing, which I'd say to anyone I'm mentoring: <mark>the interesting engineering in an
+    agentic system is almost never in the model.</mark> It's in the contracts, the validation, the evidence
+    and the failure modes. That's not a consolation prize — it's the same craft that made integration work
+    in the first place, which is why the pre-AI catalogue is still the most valuable thing on my desk.</p>
+  </div></details>
+</div>
+
+<div class="div">Quick reference</div>
+
+<div class="liners">
+  <h2>One-liners to have ready</h2>
+  <p class="s">For the morning of. Each one is a complete thought that buys thinking time.</p>
+  <table>
+    <tr><th style="width:22%">Prompt</th><th>Line</th></tr>
+    <tr><td class="k">Framing</td><td class="v">"Same integration questions, one new participant — and that participant is non-deterministic."</td></tr>
+    <tr><td class="k">On MCP</td><td class="v">"The JDBC moment for tools. Standardisation, not safety. The protocol is the easy half."</td></tr>
+    <tr><td class="k">On new styles</td><td class="v">"A tool call is RPC. A2A is messaging. There's no fifth integration style."</td></tr>
+    <tr><td class="k">On raw access</td><td class="v">"Shared-database integration was already an anti-pattern. A probabilistic caller doesn't fix it."</td></tr>
+    <tr><td class="k">On determinism</td><td class="v">"If the answer is knowable, it should be a rule."</td></tr>
+    <tr><td class="k">On agent-washing</td><td class="v">"If the prompt enumerates the rules, you've written the code. Ship the code."</td></tr>
+    <tr><td class="k">On blast radius</td><td class="v">"Blast radius is what the agent <em>can</em> reach, not what it's likely to do. I scope tools, not intentions."</td></tr>
+    <tr><td class="k">On prompt controls</td><td class="v">"Prompts are guidance. Credentials and tool scope are the control."</td></tr>
+    <tr><td class="k">On injection</td><td class="v">"It's this generation's SQL injection — but there's no parameterised query yet. So I bound the consequence, not the input."</td></tr>
+    <tr><td class="k">On accountability</td><td class="v">"The agent assembles the evidence. A named person signs."</td></tr>
+    <tr><td class="k">On legibility</td><td class="v">"I don't write documentation for agents. I make the system self-describing — in CI, where it can't drift."</td></tr>
+    <tr><td class="k">On testing</td><td class="v">"'Is the model always right' is unanswerable. 'Is the validation complete' is a normal engineering question."</td></tr>
+    <tr><td class="k">On HITL</td><td class="v">"Four hundred approvals a day isn't a control, it's a rubber stamp with extra steps."</td></tr>
+    <tr><td class="k">On reuse</td><td class="v">"A pattern that needs its author present isn't reusable — it's a consultancy engagement."</td></tr>
+  </table>
+
+  <div class="note">
+    <b>Before the room</b>
+    <p>Every <span class="ph">[bracketed]</span> value above needs a real number from the evidence bank
+    (open item 6 in the plan). <b>Q12 is the direct T3 grade-bar question and it is almost entirely
+    brackets</b> — an answer with real engagements and a measured delta lands at the bar; the same answer
+    without one reads as theory. Q3 also needs an example that went <em>both</em> ways: one proposal killed
+    down to a rule, and one where the test said yes and it got built.</p>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

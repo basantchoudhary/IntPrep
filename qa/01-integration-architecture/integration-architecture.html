@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Integration Architecture in the AI Era</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12);
+  }
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:18px}
+  .ph .k{
+    font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none
+  }
+  .ph .k.ag{background:var(--agent)}
+  .ph .k.tl{background:var(--teal)}
+  .ph .k.rd{background:var(--red)}
+  .ph h2{margin:0;font-size:clamp(20px,2.2vw,27px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+
+  h3{margin:0 0 9px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g23{grid-template-columns:2fr 3fr}
+  .g32{grid-template-columns:3fr 2fr}
+  .sect{margin-bottom:18px}
+  .sect:last-child{margin-bottom:0}
+
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14.5px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  ul.tight{margin:0;padding-left:17px}
+  ul.tight li{font-size:13px;line-height:1.55;color:#33445A;margin-bottom:2px}
+  ul.none{list-style:none;padding:0;margin:0}
+  ul.none li{font-size:13px;line-height:1.55;color:#33445A;padding:3px 0}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+  p.n + p.n{margin-top:8px}
+
+  /* quotes — the say-this lines */
+  .say{
+    border-left:4px solid var(--teal);background:#F1F8F6;border-radius:0 8px 8px 0;
+    padding:11px 15px;margin:0
+  }
+  .say p{margin:0;font-size:13.5px;line-height:1.55;color:#0B4A42;font-weight:600}
+  .say p + p{margin-top:7px}
+  .say .lbl{
+    display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--teal);margin-bottom:5px
+  }
+  .say.warn{border-left-color:var(--red);background:#FCF3F2}
+  .say.warn p{color:#7E241E}
+  .say.warn .lbl{color:var(--red)}
+  .say.ag{border-left-color:var(--agent);background:#F5F1FB}
+  .say.ag p{color:#4A2A75}
+  .say.ag .lbl{color:var(--agent)}
+
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{
+    text-align:left;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--mute);padding:0 10px 7px;border-bottom:1.5px solid var(--line);vertical-align:bottom
+  }
+  td{padding:8px 10px;border-bottom:1px solid #EBF0F5;line-height:1.5;color:#33445A;vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td b{color:var(--navy);font-weight:700}
+  td.c{text-align:center}
+  .zebra tr:nth-child(even) td{background:#FAFCFE}
+
+  /* the 3x3 participant grid */
+  .mx{width:100%;border-collapse:separate;border-spacing:6px;font-size:12px}
+  .mx th{padding:0 0 2px;text-align:center;border:none}
+  .mx th.rh{text-align:right;padding-right:8px;width:96px}
+  .mx td{
+    border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff;
+    line-height:1.45;color:#33445A
+  }
+  .mx td.rh{
+    border:none;background:none;text-align:right;font-size:11px;font-weight:800;
+    letter-spacing:.06em;text-transform:uppercase;color:var(--mute);padding-right:8px;vertical-align:middle
+  }
+  .mx td b{display:block;font-size:12.5px;font-weight:800;margin-bottom:2px;color:var(--navy)}
+  .mx td.hot{background:#F5F1FB;border-color:#D5C6EC}
+  .mx td.hot b{color:var(--agent)}
+  .mx td.warm{background:#FBF5E9;border-color:#E4CE9E}
+  .mx td.warm b{color:var(--amber)}
+  .mx td.calm{background:var(--panel)}
+  .mx td.calm b{color:var(--mute)}
+  .cS{color:var(--navy)} .cA{color:var(--agent)} .cH{color:var(--amber)}
+
+  /* pipeline / flow */
+  .flow{display:flex;align-items:stretch;gap:0}
+  .stg{
+    flex:1;border:1px solid var(--line);border-radius:9px;padding:10px 11px;background:#fff;
+    display:flex;flex-direction:column
+  }
+  .stg .cap{
+    font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--mute);margin-bottom:4px
+  }
+  .stg b{font-size:14px;font-weight:800;color:var(--navy);letter-spacing:-.01em}
+  .stg small{display:block;margin-top:4px;font-size:11.5px;line-height:1.45;color:var(--mute)}
+  .stg.det{background:#EEF3FA;border-color:#B9CDE8}
+  .stg.llm{background:#F5F1FB;border-color:#C4ADE4;border-width:2px}
+  .stg.llm b,.stg.llm .cap{color:var(--agent)}
+  .ar{display:grid;place-items:center;color:#9AA8B8;font-size:15px;padding:0 7px;flex:none}
+  .band{
+    margin-top:9px;display:flex;gap:8px;font-size:11.5px;font-weight:700
+  }
+  .band span{flex:1;text-align:center;padding:5px 8px;border-radius:6px}
+  .band .d{background:#EEF3FA;color:var(--navy)}
+  .band .a{background:#F5F1FB;color:var(--agent)}
+
+  /* layered reference architecture */
+  .stack{display:flex;flex-direction:column;gap:5px}
+  .lyr{
+    display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:9px;
+    padding:10px 14px;background:#fff
+  }
+  .lyr .nm{
+    flex:none;width:172px;font-size:11px;font-weight:800;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--navy)
+  }
+  .lyr .bd{flex:1;font-size:12.5px;line-height:1.5;color:#33445A}
+  .lyr .tagr{
+    flex:none;font-size:10.5px;font-weight:800;letter-spacing:.05em;padding:3px 9px;
+    border-radius:20px;white-space:nowrap
+  }
+  .lyr.ctl{background:#EEF3FA;border-color:#B9CDE8;border-width:2px}
+  .lyr.ctl .tagr{background:var(--navy);color:#fff}
+  .lyr.run{background:#F5F1FB;border-color:#C4ADE4;border-width:2px}
+  .lyr.run .nm{color:var(--agent)}
+  .lyr.run .tagr{background:var(--agent);color:#fff}
+  .lyr.hum{background:#FBF5E9;border-color:#E4CE9E}
+  .lyr.hum .nm{color:var(--amber)}
+  .lyr.hum .tagr{background:var(--amber);color:#fff}
+  .lyr.fab{background:#F1F8F6;border-color:#BFDED6}
+  .lyr.fab .nm{color:var(--teal)}
+  .lyr.fab .tagr{background:var(--teal);color:#fff}
+
+  /* numbered test steps */
+  .steps{display:flex;gap:12px}
+  .step{flex:1;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff;position:relative}
+  .step .no{
+    width:22px;height:22px;border-radius:6px;background:var(--agent);color:#fff;
+    display:grid;place-items:center;font-size:12px;font-weight:800;margin-bottom:7px
+  }
+  .step b{display:block;font-size:13.5px;font-weight:800;color:var(--navy);margin-bottom:3px}
+  .step span{font-size:12px;line-height:1.5;color:#33445A}
+
+  /* gate classes */
+  .gt{display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:8px;border:1px solid var(--line);background:#fff}
+  .gt code{
+    flex:none;font:700 11.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;
+    padding:5px 8px;border-radius:5px;background:var(--panel);color:var(--navy)
+  }
+  .gt .w{flex:1;font-size:12.5px;color:#33445A;line-height:1.45}
+  .gt .g{flex:none;font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px}
+  .gt.a{background:#F1F8F6;border-color:#BFDED6} .gt.a .g{background:var(--teal);color:#fff}
+  .gt.b{background:#FAFCFE} .gt.b .g{background:var(--mute);color:#fff}
+  .gt.c{background:#FBF5E9;border-color:#E4CE9E} .gt.c .g{background:var(--amber);color:#fff}
+  .gt.d{background:#FCF3F2;border-color:#E8C4C0} .gt.d .g{background:var(--red);color:#fff}
+
+  .kv{font-size:12.5px;line-height:1.6;color:#33445A}
+  .kv b{color:var(--navy)}
+
+  .ftr{
+    margin-top:16px;border-top:1.5px solid var(--line);padding-top:10px;
+    display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--mute)
+  }
+
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;border-radius:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+  }
+  @media (max-width:900px){
+    .g2,.g3,.g4,.g23,.g32{grid-template-columns:1fr}
+    .flow,.steps{flex-direction:column;gap:8px}
+    .ar{transform:rotate(90deg);padding:2px 0}
+    .lyr{flex-wrap:wrap}
+    .lyr .nm{width:100%}
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ 1 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k">01</span>
+    <h2>Integration Architecture in the AI Era</h2>
+    <div class="s">The thesis, and what carries over untouched</div>
+  </div>
+
+  <div class="sect">
+    <div class="say">
+      <span class="lbl">The thesis — say this first</span>
+      <p>Enterprise integration didn't restart in 2023. The question was always <em>how do independent
+      systems interact safely across a boundary they don't control</em> — and that question is unchanged.
+      What changed is the <b>cast</b>. We used to integrate software with software, with humans at the
+      edges. Now there are three classes of participant — <b>software systems, agentic systems and human
+      systems</b> — and every pair of them is an integration surface that needs a contract, a failure mode
+      and an owner.</p>
+      <p>So my architecture is the pre-AI architecture, extended: same integration styles, same coupling
+      discipline, same blast-radius thinking — plus one new endpoint type that is <b>non-deterministic</b>,
+      and therefore has to be <b>contained by deterministic structure</b>, not trusted.</p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>What carries over — completely unchanged</h3>
+    <table class="zebra">
+      <tr>
+        <th style="width:23%">Pre-AI discipline</th>
+        <th style="width:38%">Still true, verbatim</th>
+        <th>Why it matters <em>more</em> now</th>
+      </tr>
+      <tr><td><b>Loose coupling</b></td><td>Participants must not know each other's internals</td><td>An agent's call sequence is unpredictable — coupling you'd have survived deterministically now bites at random</td></tr>
+      <tr><td><b>Contract-first</b></td><td>The interface is the product; the implementation is private</td><td>Agents consume contracts <em>literally</em> — a vague contract becomes a wrong call</td></tr>
+      <tr><td><b>Simplicity as a constraint</b></td><td>Complexity has to be earned</td><td>Agents traverse every path you left open, so accidental complexity gets exercised</td></tr>
+      <tr><td><b>Bounded blast radius</b></td><td>Bulkheads, quotas, circuit breakers, least privilege</td><td>Now the <em>primary</em> safety control, not a resilience nicety</td></tr>
+      <tr><td><b>Idempotency &amp; reproducibility</b></td><td>Same input, same result; safe to retry</td><td>Was good practice — is now mandatory, because agents retry and re-plan</td></tr>
+      <tr><td><b>Golden path over documentation</b></td><td>Make the compliant path the easy path</td><td>The golden path is now what the agent <em>discovers</em> — so it must be executable, not written down</td></tr>
+      <tr><td><b>Reusable Lego blocks</b></td><td>Build once, compose everywhere</td><td>Tools and skills are the newest Lego blocks; the composition argument is identical</td></tr>
+      <tr><td><b>Observability &amp; audit</b></td><td>You cannot operate what you cannot see</td><td>Non-determinism makes tracing the <em>decision</em>, not just the call, mandatory</td></tr>
+      <tr><td><b>The four integration styles</b></td><td>File transfer · shared database · RPC · messaging <span style="color:var(--mute)">(Hohpe &amp; Woolf, 2003)</span></td><td>Agents introduce no fifth style. A tool call is RPC. A2A delegation is messaging. That's it.</td></tr>
+    </table>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="say warn">
+      <span class="lbl">The sharpest continuity point</span>
+      <p>Shared-database integration was already an anti-pattern — two systems coupled through a schema
+      neither owns. Handing an agent raw SQL against a system of record is that same anti-pattern, except
+      the caller is now probabilistic. If it was wrong for a deterministic service, it is not suddenly
+      right for an LLM.</p>
+    </div>
+    <div class="say">
+      <span class="lbl">Say this</span>
+      <p>MCP is not a new integration style. It's RPC with discovery and a semantic contract. Recognising
+      that is what stops you re-solving problems the industry solved in 2003.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>Integration Architecture in the AI Era</span><span>1 / 10</span></div>
+</div>
+
+<!-- ═══════════════ 2 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k rd">02</span>
+    <h2>What AI actually breaks</h2>
+    <div class="s">Six assumptions — not "everything"</div>
+  </div>
+
+  <div class="sect">
+    <p class="n">Precision here is the seniority signal. Anyone can say the world changed; being able to
+    name exactly which six assumptions failed, and the architectural response to each, is what separates
+    an architect from someone reciting agent vocabulary.</p>
+  </div>
+
+  <div class="sect">
+    <table class="zebra">
+      <tr>
+        <th style="width:26%">Assumption that held pre-AI</th>
+        <th style="width:36%">What breaks</th>
+        <th>Architectural response</th>
+      </tr>
+      <tr><td><b>The caller is deterministic</b><br><span style="color:var(--mute)">same input → same call sequence</span></td><td>An agent may call different tools, in a different order, for identical input</td><td>Design the <b>tool</b>, not the caller, to be safe: validate, constrain, make idempotent, cap</td></tr>
+      <tr><td><b>Consumers are known at design time</b></td><td>An agent composes tools you never anticipated pairing</td><td>Every tool must be <b>independently safe</b> — no "safe only when called after X"</td></tr>
+      <tr><td><b>The contract is syntactic</b><br><span style="color:var(--mute)">schema, types, versions</span></td><td>Schema-valid but semantically wrong calls become the dominant defect class</td><td>Contracts gain a <b>semantic layer</b>: purpose, preconditions, side-effect class, cost, when <em>not</em> to use</td></tr>
+      <tr><td><b>Data is inert</b></td><td>Retrieved content can carry instructions — prompt injection</td><td><b>Trust tiers</b> on content; retrieved data never reaches the control path unmediated</td></tr>
+      <tr><td><b>Behaviour changes only when code changes</b></td><td>A model version bump silently changes behaviour with a zero-line diff</td><td><b>Pin model versions</b>; treat the model as a versioned third-party dependency with an eval gate in CI</td></tr>
+      <tr><td><b>Testing = deterministic assertions</b></td><td>Pass/fail on a single run proves nothing</td><td>Add <b>evaluation</b> alongside testing: golden sets, distributional thresholds, behaviour regression</td></tr>
+    </table>
+  </div>
+
+  <div class="sect">
+    <div class="say ag">
+      <span class="lbl">Say this</span>
+      <p>AI didn't invalidate my architecture. It invalidated six assumptions inside it — and I can name
+      all six.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>What AI actually breaks</span><span>2 / 10</span></div>
+</div>
+
+<!-- ═══════════════ 3 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k ag">03</span>
+    <h2>The participant model</h2>
+    <div class="s">Three classes · nine integration edges — the whiteboard artefact</div>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="box tint"><b class="t cS">S — Software systems</b><p class="n"><b>Deterministic, contract-bound.</b> APIs, pipelines, databases, ERP, systems of record.</p></div>
+    <div class="box tint"><b class="t cA">A — Agentic systems</b><p class="n"><b>Probabilistic, goal-bound.</b> Plan, choose, call, reflect, re-plan.</p></div>
+    <div class="box tint"><b class="t cH">H — Human systems</b><p class="n"><b>Accountable, approval-bound.</b> Approvers, operators, reviewers, change boards.</p></div>
+  </div>
+
+  <div class="sect">
+    <h3>Every pair is an integration surface — with a contract, a failure mode and an owner</h3>
+    <table class="mx">
+      <tr>
+        <th class="rh"></th>
+        <th class="cS">→ Software (S)</th>
+        <th class="cA">→ Agent (A)</th>
+        <th class="cH">→ Human (H)</th>
+      </tr>
+      <tr>
+        <td class="rh cS">Software</td>
+        <td class="calm"><b>Classic EIP</b>Events, messaging, API contracts, CDC, ETL — unchanged</td>
+        <td><b>Bounded task envelope</b>Async job + callback, budget, timeout, scope</td>
+        <td class="calm"><b>Notify</b>Alert, ticket, dashboard, report</td>
+      </tr>
+      <tr>
+        <td class="rh cA">Agent</td>
+        <td class="hot"><b>Tool call via validating adapter (MCP)</b>The highest-risk edge in the whole architecture</td>
+        <td class="hot"><b>A2A delegation</b>Task contract, capability discovery, provenance chain, depth cap</td>
+        <td class="warm"><b>Escalation &amp; approval</b>Typed request + evidence bundle + timeout policy</td>
+      </tr>
+      <tr>
+        <td class="rh cH">Human</td>
+        <td class="calm"><b>UI · API · CLI</b>Unchanged</td>
+        <td><b>Intent + constraint</b>Prompts, policy, guardrails, golden-path definitions</td>
+        <td class="calm"><b>Org process</b>RACI, change advisory board</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="sect">
+    <h3>The three rules that fall out of the grid</h3>
+    <div class="grid g3">
+      <div class="box" style="border-left:4px solid var(--agent)">
+        <b class="t">1 · A→S is where the engineering goes</b>
+        <p class="n">The only edge where a probabilistic caller touches a system of record. Everything
+        else is a variation on a problem we already know how to solve. Spend the design budget here.</p>
+      </div>
+      <div class="box" style="border-left:4px solid var(--amber)">
+        <b class="t">2 · A→H must be typed, not conversational</b>
+        <p class="n">An approval is a structured object — action, evidence, blast radius, reversibility,
+        expiry — not a chat message. If it can't be replayed and audited a year later, it isn't a control.</p>
+      </div>
+      <div class="box" style="border-left:4px solid var(--red)">
+        <b class="t">3 · A→A is newest and least mature</b>
+        <p class="n">Treat cross-agent delegation as untrusted inter-service messaging: authenticate,
+        carry provenance, cap depth, and never let delegated authority exceed the delegator's own scope.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <div class="say">
+      <span class="lbl">Say this</span>
+      <p>Pre-AI we asked how systems talk to each other. We now also have to ask how systems
+      <b>explain themselves</b> — because one of the participants discovers the integration at runtime
+      instead of being wired to it at build time.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>The participant model</span><span>3 / 10</span></div>
+</div>
+
+<!-- ═══════════════ 4 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k tl">04</span>
+    <h2>MCP · A2A · Skills</h2>
+    <div class="s">Placed in lineage — and what they deliberately don't solve</div>
+  </div>
+
+  <div class="sect">
+    <table class="zebra">
+      <tr>
+        <th style="width:14%">New</th>
+        <th style="width:29%">What it actually is</th>
+        <th style="width:25%">Pre-AI ancestor</th>
+        <th>Genuinely new part</th>
+      </tr>
+      <tr><td><b>Tools /<br>function calling</b></td><td>A typed remote procedure the model may invoke</td><td>RPC endpoint, service operation</td><td>The <b>caller decides</b> whether and when to call</td></tr>
+      <tr><td><b>MCP</b></td><td>Standard client/server protocol for exposing tools, resources and prompts to a model</td><td><b>ODBC / JDBC</b> — a driver standard that killed N×M bespoke adapters</td><td>Discovery and semantic description travel <b>with</b> the contract</td></tr>
+      <tr><td><b>A2A</b></td><td>Inter-agent task delegation with capability discovery ("agent cards")</td><td>Service registry + async messaging / choreography</td><td>The delegate can <b>renegotiate</b> the task, not just execute it</td></tr>
+      <tr><td><b>Skills</b></td><td>A packaged portable capability — instructions, scripts, resources — loaded on demand</td><td>Library · plugin · runbook</td><td><b>Progressive disclosure</b> — capability scales past the context limit</td></tr>
+      <tr><td><b>Context &amp; memory</b></td><td>Working state within a run; retained state across runs</td><td>Session state, cache, conversation store</td><td>It is <b>also an attack surface</b> and a correctness surface</td></tr>
+    </table>
+  </div>
+
+  <div class="sect grid g32">
+    <div class="say ag">
+      <span class="lbl">The JDBC analogy — and where it breaks</span>
+      <p>MCP is the JDBC moment for tools: one protocol instead of N×M bespoke adapters. But the analogy
+      breaks in two places, and both matter. JDBC exposed <b>one resource type with one semantics</b>;
+      MCP exposes <b>arbitrary side effects</b>. And a JDBC caller was deterministic code a reviewer had
+      read.</p>
+      <p>So MCP gives you standardisation without giving you safety — the adapter behind it still has to
+      do authorisation, validation and blast-radius control. <b>The protocol is the easy half.</b></p>
+    </div>
+    <div class="box" style="border-left:4px solid var(--red)">
+      <b class="t">What none of them give you</b>
+      <p class="n">MCP, A2A and Skills solve <b>transport, discovery and packaging</b>. They do not solve:</p>
+      <ul class="tight" style="margin-top:7px">
+        <li>Authorisation and delegated identity</li>
+        <li>Input validation and output verification</li>
+        <li>Idempotency and compensating actions</li>
+        <li>Rate limiting, budget caps, loop breaking</li>
+        <li>Audit, lineage and evidence</li>
+        <li>Routing, translation, dead-lettering — <em>the actual Enterprise Integration Patterns</em></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="sect">
+    <div class="say">
+      <span class="lbl">Say this</span>
+      <p>Which is exactly why the EIP catalogue is still on my desk. The new protocols moved the plumbing;
+      they didn't move the plumbing's failure modes.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>MCP · A2A · Skills</span><span>4 / 10</span></div>
+</div>
+
+<!-- ═══════════════ 5 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k ag">05</span>
+    <h2>The deterministic / agentic boundary</h2>
+    <div class="s">A test, not an opinion — a test is reusable</div>
+  </div>
+
+  <div class="sect">
+    <h3>Use an LLM only if all three are true</h3>
+    <div class="steps">
+      <div class="step">
+        <div class="no">1</div>
+        <b>Unbounded input space</b>
+        <span>The inputs cannot be enumerated or schematised in advance — an unfamiliar codebase, a
+        free-text incident, a heterogeneous estate.</span>
+      </div>
+      <div class="step">
+        <div class="no">2</div>
+        <b>Judgement, not lookup</b>
+        <span>The mapping from input to output cannot be expressed as a rule, a table, a query, or a
+        conventional model you could have written.</span>
+      </div>
+      <div class="step">
+        <div class="no">3</div>
+        <b>A wrong answer is survivable</b>
+        <span>Because something deterministic — or a human — checks it before it has effect.</span>
+      </div>
+    </div>
+    <p class="n" style="margin-top:11px">Fail any one → <b>it should be code.</b> Fail #3 in particular →
+    <b>it must never be the final authority</b>, however good the model gets.</p>
+  </div>
+
+  <div class="sect">
+    <h3>The reference flow — the shape of every agentic capability in the suite</h3>
+    <div class="flow">
+      <div class="stg det"><span class="cap">Deterministic</span><b>Observe</b><small>Collect facts — telemetry, logs, catalog, code, IaC</small></div>
+      <div class="ar">→</div>
+      <div class="stg llm"><span class="cap">Agentic — LLM</span><b>Propose</b><small>Interpret, diagnose, recommend, draft artefacts</small></div>
+      <div class="ar">→</div>
+      <div class="stg det"><span class="cap">Deterministic</span><b>Validate</b><small>Schema, policy, safety, blast radius, cost; human gate by action class</small></div>
+      <div class="ar">→</div>
+      <div class="stg det"><span class="cap">Deterministic</span><b>Execute</b><small>Idempotent, reversible, scoped credentials</small></div>
+      <div class="ar">→</div>
+      <div class="stg det"><span class="cap">Deterministic</span><b>Record</b><small>Immutable evidence, lineage, signed bundle</small></div>
+    </div>
+    <div class="band">
+      <span class="d">Four of five stages are deterministic</span>
+      <span class="a">The LLM occupies one stage — and has no authority in any other</span>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="say">
+      <span class="lbl">Pushback: "Isn't that under-using AI?"</span>
+      <p>It's using AI where it wins and code where code wins. The model's advantage is interpretation of
+      the unfamiliar — that's one step in five. The other four have to be repeatable and auditable, and a
+      rule is cheaper, faster and provable. This isn't scepticism, it's a cost, latency and assurance
+      conclusion — and it's <b>why I can put an agent into a GxP-relevant path at all</b>: the
+      non-determinism is boxed in on both sides.</p>
+    </div>
+    <div class="say warn">
+      <span class="lbl">The anti-pattern to name — "agent-washing"</span>
+      <p>Wrapping a deterministic workflow in an LLM so it can be called agentic. The tell: the prompt
+      enumerates the rules. Removing the LLM changes nothing except cost, latency and auditability.</p>
+      <p>If you can write the prompt as an exhaustive list of rules, you have just written the code.
+      <b>Ship the code.</b></p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>The deterministic / agentic boundary</span><span>5 / 10</span></div>
+</div>
+
+<!-- ═══════════════ 6 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k tl">06</span>
+    <h2>Contracts — syntactic to semantic</h2>
+    <div class="s">And the classification that turns a human gate into a lookup</div>
+  </div>
+
+  <div class="sect">
+    <h3>Contracts over coupling was already the principle — AI adds a layer, it doesn't replace one</h3>
+    <div class="grid g3">
+      <div class="box">
+        <b class="t">Syntactic</b>
+        <p class="n">Schema, types, required fields, versioning, error codes.</p>
+        <p class="n" style="color:var(--mute)"><b>Consumed by:</b> code — unchanged</p>
+      </div>
+      <div class="box" style="border-left:4px solid var(--agent);background:#F5F1FB">
+        <b class="t" style="color:var(--agent)">Semantic <span style="font-weight:700;font-size:11px">— the new layer</span></b>
+        <p class="n">Purpose, preconditions, postconditions, <em>when not to use</em>, worked examples,
+        side-effect class, cost and latency envelope, data classification.</p>
+        <p class="n" style="color:var(--mute)"><b>Consumed by:</b> agents — and new engineers</p>
+      </div>
+      <div class="box">
+        <b class="t">Operational</b>
+        <p class="n">SLO, rate limits, idempotency key, retry and compensation semantics, owner.</p>
+        <p class="n" style="color:var(--mute)"><b>Consumed by:</b> both, plus the control plane</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Side-effect class — the critical addition, because it drives the gate automatically</h3>
+    <div class="grid" style="gap:6px">
+      <div class="gt a"><code>read</code><span class="w">No state change</span><span class="g">Auto</span></div>
+      <div class="gt b"><code>write-reversible</code><span class="w">Changes state, cleanly undoable</span><span class="g">Auto within budget · logged</span></div>
+      <div class="gt c"><code>write-irreversible</code><span class="w">Cannot be undone — delete, send, pay, publish</span><span class="g">Human approval, always</span></div>
+      <div class="gt d"><code>privileged</code><span class="w">Touches credentials, policy, IAM, production configuration</span><span class="g">Human + second reviewer</span></div>
+    </div>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="say">
+      <span class="lbl">Say this</span>
+      <p>Once side-effect class is in the contract, the gate stops being a judgement call at runtime and
+      becomes a <b>lookup</b>. That is what makes the control auditable — and reusable across every agent
+      instead of re-argued per project.</p>
+    </div>
+    <div class="box tint">
+      <b class="t">Why this is the strongest T2 artefact</b>
+      <p class="n">The grade bar asks for <em>"an assurance checklist, risk framework or
+      regulatory-alignment approach now reused by other engagements."</em> A four-value classification
+      that derives the approval gate is exactly that — small enough to adopt, general enough to travel,
+      and it is what security and compliance pick up first because it turns a decision they'd have to
+      trust into one they can audit.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>Contracts — syntactic to semantic</span><span>6 / 10</span></div>
+</div>
+
+<!-- ═══════════════ 7 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k">07</span>
+    <h2>Machine legibility &amp; the human plane</h2>
+    <div class="s">Discoverable estates · approval as an architectural component</div>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+      <h3>Designing systems to be machine-legible</h3>
+      <div class="box tint" style="margin-bottom:11px">
+        <p class="n"><b>The reframe:</b> making a system legible to an agent is the <em>same work</em> as
+        making it legible to the next engineer. AI didn't create a new requirement — it finally put a
+        price on hygiene that was always correct and always deferred.</p>
+      </div>
+      <table>
+        <tr><th style="width:44%">Legibility asset</th><th>Serves agents by…</th></tr>
+        <tr><td><b>Machine-readable contracts</b><br><span style="color:var(--mute)">OpenAPI, schemas, data contracts</span></td><td>Discovery + safe invocation</td></tr>
+        <tr><td><b>Catalog, glossary, lineage</b></td><td>Grounding; blast-radius calculation <em>before</em> a change</td></tr>
+        <tr><td><b>Decision records (ADRs)</b></td><td>Stops the agent "fixing" a deliberate constraint</td></tr>
+        <tr><td><b>Small modules, explicit dependencies</b></td><td>Fits in context; bounded change surface</td></tr>
+        <tr><td><b>Executable golden path</b><br><span style="color:var(--mute)">templates, scaffolds, CI</span></td><td>Makes the compliant path the <em>discoverable</em> path</td></tr>
+        <tr><td><b>Repo agent instructions</b><br><span style="color:var(--mute)">CLAUDE.md / AGENTS.md</span></td><td>Behavioural contract for code-writing agents</td></tr>
+        <tr><td><b>Tests as specification</b></td><td>The safety net that makes autonomous change acceptable</td></tr>
+      </table>
+      <div class="say" style="margin-top:11px">
+        <span class="lbl">Say this</span>
+        <p>I don't write documentation for agents. I make the system self-describing — <b>in CI, where it
+        can't drift</b>. Both audiences are served by the same artefact.</p>
+      </div>
+    </div>
+
+    <div>
+      <h3>The human plane as an architectural component</h3>
+      <table>
+        <tr><th style="width:34%">Design question</th><th style="width:22%">Bad answer</th><th>Architectural answer</th></tr>
+        <tr><td><b>What does the human receive?</b></td><td style="color:var(--red)">A chat message</td><td>A typed approval object: action, evidence, blast radius, reversibility, cost, expiry</td></tr>
+        <tr><td><b>How long do they have?</b></td><td style="color:var(--red)">Unbounded</td><td>A timeout with a defined default — and the default is <b>deny</b>, never proceed</td></tr>
+        <tr><td><b>If they're unavailable?</b></td><td style="color:var(--red)">The run hangs</td><td>Escalation path, fallback approver, safe-park state</td></tr>
+        <tr><td><b>Can they be overwhelmed?</b></td><td style="color:var(--red)">"They'll cope"</td><td>Gate by side-effect class; approval dwell time is a health metric</td></tr>
+        <tr><td><b>What is recorded?</b></td><td style="color:var(--red)">A log line</td><td>Immutable evidence bundle: who, what, on what basis, when</td></tr>
+        <tr><td><b>Where is accountability?</b></td><td style="color:var(--red)">"The agent approved it"</td><td><b>A named person signs. Always.</b></td></tr>
+      </table>
+      <div class="say warn" style="margin-top:11px">
+        <span class="lbl">Say this</span>
+        <p>A human gate that arrives as four hundred approval requests a day isn't a control — it's a
+        rubber stamp with extra steps. <b>Gate density is an architectural decision</b>, and I size it by
+        side-effect class so the human sees the twenty that matter, not the four hundred that don't.</p>
+      </div>
+      <div class="say" style="margin-top:11px">
+        <span class="lbl">The accountability line — the T2 centrepiece</span>
+        <p>The agent assembles the evidence. A named person signs. That boundary is not a limitation of
+        today's models that we'll relax later — it's <b>where accountability lives</b>, and accountability
+        doesn't move just because the model gets better.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ftr"><span>Machine legibility &amp; the human plane</span><span>7 / 10</span></div>
+</div>
+
+<!-- ═══════════════ 8 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k ag">08</span>
+    <h2>Agentic design patterns</h2>
+    <div class="s">GoF 1994 → EIP 2003 → the agentic catalogue, forming now</div>
+  </div>
+
+  <div class="sect grid g2">
+    <div>
+      <h3>Composition patterns — how work is arranged</h3>
+      <table class="zebra">
+        <tr><th style="width:40%">Pattern</th><th>Pre-AI ancestor</th></tr>
+        <tr><td><b>Prompt chaining</b><br><span style="color:var(--mute)">fixed sequential decomposition</span></td><td>Pipes and filters</td></tr>
+        <tr><td><b>Routing</b><br><span style="color:var(--mute)">classify, then dispatch to a specialist</span></td><td>Content-based router <em>(EIP)</em></td></tr>
+        <tr><td><b>Parallelisation</b><br><span style="color:var(--mute)">fan out independent subtasks, aggregate</span></td><td>Scatter-gather <em>(EIP)</em></td></tr>
+        <tr><td><b>Orchestrator–worker</b><br><span style="color:var(--mute)">planner decomposes and delegates dynamically</span></td><td>Process manager <em>(EIP)</em></td></tr>
+        <tr><td><b>Evaluator–optimiser</b><br><span style="color:var(--mute)">generate → critique → revise to a bar</span></td><td>Feedback control loop</td></tr>
+        <tr><td><b>Reflection</b><br><span style="color:var(--mute)">self-critique before returning</span></td><td>Code review, assertion</td></tr>
+        <tr><td><b>Tool use</b><br><span style="color:var(--mute)">reach outside the model for facts and effects</span></td><td>Adapter, service invocation</td></tr>
+        <tr><td><b>Multi-agent collaboration</b><br><span style="color:var(--mute)">specialists with distinct scopes</span></td><td>Microservices, separation of concerns</td></tr>
+      </table>
+    </div>
+
+    <div>
+      <h3>Containment patterns — the ones that matter in a regulated estate</h3>
+      <table class="zebra">
+        <tr><th style="width:40%">Pattern</th><th>Pre-AI ancestor</th></tr>
+        <tr><td><b>Validating adapter</b><br><span style="color:var(--mute)">every agent call passes deterministic validation</span></td><td>Message translator + validating endpoint <em>(EIP)</em></td></tr>
+        <tr><td><b>Plan-then-confirm</b><br><span style="color:var(--mute)">plan approved; execution is mechanical</span></td><td>Change request · dry run · <code style="font-size:11px">terraform plan</code></td></tr>
+        <tr><td><b>Sandbox execution</b><br><span style="color:var(--mute)">prove it in a replica before production</span></td><td>Staging, canary, blue/green</td></tr>
+        <tr><td><b>Bulkhead by scope</b><br><span style="color:var(--mute)">one agent, one purpose, one credential</span></td><td>Bulkhead, least privilege</td></tr>
+        <tr><td><b>Budget &amp; loop breaker</b><br><span style="color:var(--mute)">caps on tokens, calls, depth, wall-clock</span></td><td>Circuit breaker, timeout, quota</td></tr>
+        <tr><td><b>Compensating action / saga</b><br><span style="color:var(--mute)">every irreversible step has a defined undo</span></td><td>Saga, compensating transaction</td></tr>
+        <tr><td><b>Dead-letter for agent runs</b><br><span style="color:var(--mute)">failed runs parked and triaged, never silently retried</span></td><td>Dead letter channel <em>(EIP)</em></td></tr>
+        <tr><td><b>Provenance &amp; trust tiering</b><br><span style="color:var(--mute)">untrusted content never reaches the control path</span></td><td>Taint tracking, input sanitisation</td></tr>
+        <tr><td><b>Evidence by construction</b><br><span style="color:var(--mute)">the audit artefact is emitted by the run</span></td><td>Immutable audit log</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="sect">
+    <div class="say ag">
+      <span class="lbl">Say this</span>
+      <p>Two thirds of that second table is EIP and resilience patterns with new names. That's not a
+      criticism — it's the reason I can put agents into a regulated estate with a straight face.
+      <b>We are not starting from zero on safety</b>; we're applying a mature catalogue to a new kind of
+      caller.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>Agentic design patterns</span><span>8 / 10</span></div>
+</div>
+
+<!-- ═══════════════ 9 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k rd">09</span>
+    <h2>Failure modes &amp; blast radius</h2>
+    <div class="s">T1 names resilience explicitly — this is the failure analysis, not a capability map</div>
+  </div>
+
+  <div class="sect">
+    <div class="box tint">
+      <p class="n"><b>The classic failure modes don't go away</b> — partial failure, timeout, retry storms,
+      poison messages, cascading dependency failure. Bulkheads, circuit breakers, dead-letter channels,
+      idempotency. Unchanged. Below are the ones that are genuinely new, each with the control against it.</p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <table class="zebra">
+      <tr><th style="width:22%">Failure mode</th><th style="width:33%">What it looks like</th><th>Control</th></tr>
+      <tr><td><b>Hallucinated / malformed call</b></td><td>Schema-valid nonsense, or a call to a tool that doesn't fit the situation</td><td>Strict schema + semantic precondition checks in the adapter — <b>reject, don't coerce</b>. Coercing a wrong call into a valid one is how you get a confidently wrong action.</td></tr>
+      <tr><td><b>Prompt injection via data</b></td><td>A retrieved document instructs the agent</td><td>Trust tiers; data never enters the control path; <b>capability scoping</b> so a hijacked agent still can't do much</td></tr>
+      <tr><td><b>Runaway loop / cost</b></td><td>Agent re-plans indefinitely</td><td>Depth, call, token and wall-clock caps; <b>budget as a contract term</b>, not an afterthought</td></tr>
+      <tr><td><b>Over-broad authority</b></td><td>One agent holds credentials for everything</td><td>One agent, one scope, one credential; delegated on-behalf-of identity, short-lived</td></tr>
+      <tr><td><b>Cascading multi-agent failure</b></td><td>A wrong output is consumed as established fact by three downstream agents</td><td>Provenance and confidence carried <em>in the message</em>; validation at <b>each hop</b>, not just the first</td></tr>
+      <tr><td><b>Silent model drift</b></td><td>Version bump changes behaviour with no code diff</td><td>Pin versions; eval suite as a CI gate; canary on model change like any dependency upgrade</td></tr>
+      <tr><td><b>Non-reproducibility</b></td><td>Cannot explain a decision made six months ago</td><td>Log the <b>decision trace</b> — inputs, model version, prompt version, tool calls, outputs — not just the result</td></tr>
+      <tr><td><b>Context poisoning / staleness</b></td><td>Agent reasons over stale or contaminated state</td><td>Bound context lifetime; re-ground from the source of record on state-changing paths</td></tr>
+      <tr><td><b>Human gate fatigue</b></td><td>Approvers rubber-stamp</td><td>Gate by side-effect class; <b>measure approval dwell time</b> — two-second approvals mean the control has failed</td></tr>
+    </table>
+  </div>
+
+  <div class="sect grid g2">
+    <div class="say warn">
+      <span class="lbl">The blast radius formula</span>
+      <p>Blast radius = the union of what <b>every tool in that agent's scope</b> can reach. Not what it's
+      <em>likely</em> to do — what it <em>can</em> do. So I scope tools, not intentions.</p>
+      <p><b>Prompts and instructions are guidance. The credential and the tool list are the control.</b></p>
+    </div>
+    <div class="box" style="border-left:4px solid var(--navy)">
+      <b class="t">The one to single out — idempotency</b>
+      <p class="n">It was good practice before; it is <b>mandatory</b> now, because agents retry and
+      re-plan. A non-idempotent tool turns a retry into a duplicate payment.</p>
+      <p class="n">Every irreversible action needs an idempotency key and a defined compensating action —
+      or it needs a human, and that is a legitimate answer.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>Failure modes &amp; blast radius</span><span>9 / 10</span></div>
+</div>
+
+<!-- ═══════════════ 10 ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k">10</span>
+    <h2>Reference architecture &amp; governance</h2>
+    <div class="s">Where it all lands — and how to say no to "make everything an agent"</div>
+  </div>
+
+  <div class="sect">
+    <h3>The layered view — the North Star, with the agentic layer made explicit</h3>
+    <div class="stack">
+      <div class="lyr">
+        <span class="nm">Experience</span>
+        <span class="bd">Apps · copilots · chat · IDE · dashboards</span>
+      </div>
+      <div class="lyr hum">
+        <span class="nm">Human plane</span>
+        <span class="bd">Approvals · escalation · evidence review · sign-off</span>
+        <span class="tagr">Typed &amp; SLA'd</span>
+      </div>
+      <div class="lyr ctl">
+        <span class="nm">Agent control plane</span>
+        <span class="bd">Registry · identity &amp; delegation · policy &amp; gates · budgets · eval harness · audit &amp; evidence · decision trace</span>
+        <span class="tagr">Deterministic — the reuse surface</span>
+      </div>
+      <div class="lyr run">
+        <span class="nm">Agent runtime</span>
+        <span class="bd">Planning · memory &amp; context · reflection · skills — composite agents built from base agents</span>
+        <span class="tagr">The only probabilistic layer</span>
+      </div>
+      <div class="lyr fab">
+        <span class="nm">Integration fabric</span>
+        <span class="bd">MCP servers · A2A · APIs · events · validating adapters · translators · routers · dead-letter</span>
+        <span class="tagr">Classic EIP lives here</span>
+      </div>
+      <div class="lyr">
+        <span class="nm">Systems &amp; data</span>
+        <span class="bd">Systems of record · lakehouse · catalog &amp; lineage · IaC · pipelines · observability</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sect grid g3">
+    <div class="box" style="border-left:4px solid var(--navy)">
+      <b class="t">1 · The control plane sits above the runtime</b>
+      <p class="n">The agent does not police itself. Self-policing is not a control — it's the same actor.</p>
+    </div>
+    <div class="box" style="border-left:4px solid var(--teal)">
+      <b class="t">2 · The control plane is the reusable asset</b>
+      <p class="n">Identical for Ops Gate, Self-Healing and Spark Modernization. The second capability cost
+      a fraction of the first because everything except the judgement step already existed. <b>That is the
+      T3 evidence.</b></p>
+    </div>
+    <div class="box" style="border-left:4px solid var(--amber)">
+      <b class="t">3 · The fabric is where EIP does its work</b>
+      <p class="n">Which is why this is an <em>extension</em> of the pre-AI architecture, not a replacement
+      for it.</p>
+    </div>
+  </div>
+
+  <div class="sect">
+    <h3>Governance — the four-question intake for any proposed agentic capability</h3>
+    <div class="steps">
+      <div class="step"><div class="no">1</div><b>Can this be a rule?</b><span>If yes, it's a rule. Kills most proposals — say so cheerfully.</span></div>
+      <div class="step"><div class="no">2</div><b>What's the side-effect class of everything it can touch?</b><span>Determines the gate, before anyone writes a prompt.</span></div>
+      <div class="step"><div class="no">3</div><b>What's the blast radius if it's completely wrong?</b><span>If the answer needs the model to be right, the design is wrong.</span></div>
+      <div class="step"><div class="no">4</div><b>How is it evaluated, and what does regression look like?</b><span>No eval, no production.</span></div>
+    </div>
+  </div>
+
+  <div class="sect">
+    <div class="say">
+      <span class="lbl">Say this</span>
+      <p>Nine times out of ten this ends with a smaller agent and a bigger deterministic surface — and a
+      capability that actually passes assurance. The tenth is genuinely valuable and gets built properly.
+      I'd rather be the person who says "that's a rule" early than the person explaining an incident later.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>Reference architecture &amp; governance</span><span>10 / 10</span></div>
+</div>
+
+</body>
+</html>
