@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Integration Patterns — Pre-AI and Agentic</title>
+<style>
+  :root{
+    --navy:#153A6B; --teal:#0E7A6B; --agent:#6D3FA8; --amber:#B5811A;
+    --red:#A8322B; --ink:#16202E; --mute:#5C6B7F; --line:#D8DFE8; --panel:#F5F8FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:#EDF1F5;color:var(--ink);
+    font:400 15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:1340px;margin:20px auto;background:#fff;padding:30px 34px 28px;
+    border-radius:12px;box-shadow:0 1px 3px rgba(20,40,70,.12);
+  }
+  .ph{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--navy);padding-bottom:10px;margin-bottom:18px}
+  .ph .k{
+    font-size:10.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;
+    color:#fff;background:var(--navy);padding:4px 9px;border-radius:5px;flex:none
+  }
+  .ph .k.ag{background:var(--agent)} .ph .k.tl{background:var(--teal)} .ph .k.rd{background:var(--red)}
+  .ph h2{margin:0;font-size:clamp(20px,2.2vw,27px);font-weight:800;letter-spacing:-.02em;color:var(--navy)}
+  .ph .s{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--mute);text-align:right}
+
+  h3{margin:0 0 10px;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .sect{margin-bottom:18px}
+  .sect:last-child{margin-bottom:0}
+  .grid{display:grid;gap:14px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+
+  .box{border:1px solid var(--line);border-radius:10px;padding:13px 15px;background:#fff}
+  .box.tint{background:var(--panel)}
+  .box b.t{display:block;font-size:14px;font-weight:800;margin-bottom:5px;color:var(--navy)}
+  p.n{margin:0;font-size:13px;line-height:1.55;color:#33445A}
+  p.n + p.n{margin-top:8px}
+  ul.tight{margin:0;padding-left:17px}
+  ul.tight li{font-size:12.5px;line-height:1.55;color:#33445A;margin-bottom:2px}
+
+  .say{border-left:4px solid var(--teal);background:#F1F8F6;border-radius:0 8px 8px 0;padding:11px 15px;margin:0}
+  .say p{margin:0;font-size:13.5px;line-height:1.55;color:#0B4A42;font-weight:600}
+  .say p + p{margin-top:7px}
+  .say .lbl{display:block;font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--teal);margin-bottom:5px}
+  .say.warn{border-left-color:var(--red);background:#FCF3F2}
+  .say.warn p{color:#7E241E} .say.warn .lbl{color:var(--red)}
+  .say.ag{border-left-color:var(--agent);background:#F5F1FB}
+  .say.ag p{color:#4A2A75} .say.ag .lbl{color:var(--agent)}
+
+  /* ── diagram frame ── */
+  .dwrap{border:1px solid var(--line);border-radius:11px;padding:14px 16px 12px;background:#fff;margin-bottom:12px}
+  .dwrap.tint{background:#FCFDFE}
+  .dwrap .dt{
+    font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--navy);margin-bottom:9px
+  }
+  .dcap{margin:8px 0 0;font-size:12px;line-height:1.55;color:var(--mute)}
+  .dcap b{color:var(--navy)}
+
+  /* ── svg vocabulary ── */
+  .dg{width:100%;height:auto;display:block;overflow:visible}
+  .dg text{font-family:inherit}
+  .dg .cap{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;fill:var(--mute)}
+  .dg .t{font-size:11.5px;font-weight:700;fill:var(--navy)}
+  .dg .tb{font-size:13px;font-weight:800;fill:var(--navy)}
+  .dg .s{font-size:10px;font-weight:600;fill:var(--mute)}
+  .dg .lb{font-size:9.5px;font-weight:700;fill:var(--mute)}
+  .dg .lbR{font-size:10px;font-weight:800;fill:var(--red)}
+  .dg .lbT{font-size:10px;font-weight:800;fill:var(--teal)}
+  .dg .lbA{font-size:9.5px;font-weight:800;fill:var(--agent)}
+  .dg .wht{fill:#fff}
+  .dg rect.n{fill:#fff;stroke:var(--line);stroke-width:1.5}
+  .dg rect.sys{fill:#EEF3FA;stroke:#B9CDE8}
+  .dg rect.ag{fill:#F5F1FB;stroke:#C4ADE4}
+  .dg rect.hu{fill:#FBF5E9;stroke:#E4CE9E}
+  .dg rect.ok{fill:#F1F8F6;stroke:#BFDED6}
+  .dg rect.bad{fill:#FCF3F2;stroke:#E8C4C0}
+  .dg rect.det{fill:#EEF3FA;stroke:var(--navy);stroke-width:2;stroke-dasharray:6 4}
+  .dg rect.zbad{fill:#FCF3F2;stroke:var(--red);stroke-width:1.5;stroke-dasharray:6 4}
+  .dg rect.zok{fill:#F1F8F6;stroke:var(--teal);stroke-width:1.5;stroke-dasharray:6 4}
+  .dg rect.band{stroke:none}
+  .dg .e{stroke:#9AA8B8;stroke-width:1.5;fill:none;marker-end:url(#ar)}
+  .dg .eN{stroke:var(--navy);marker-end:url(#arN)}
+  .dg .eA{stroke:var(--agent);marker-end:url(#arA)}
+  .dg .eT{stroke:var(--teal);marker-end:url(#arT)}
+  .dg .eR{stroke:var(--red);marker-end:url(#arR)}
+  .dg .eM{stroke:var(--amber);marker-end:url(#arM)}
+  .dg .dash{stroke-dasharray:5 4}
+  .dg .thin{stroke-width:1.1;opacity:.5}
+  .dg .nomk{marker-end:none}
+
+  .ftr{margin-top:16px;border-top:1.5px solid var(--line);padding-top:10px;display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--mute)}
+
+  @media print{
+    @page{size:landscape;margin:7mm}
+    body{background:#fff}
+    .page{max-width:none;margin:0;padding:0;border-radius:0;box-shadow:none;page-break-after:always}
+    .page:last-child{page-break-after:auto}
+  }
+  @media (max-width:900px){ .g2,.g3,.g4{grid-template-columns:1fr} }
+</style>
+</head>
+<body>
+
+<svg style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs>
+  <marker id="ar"  viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#9AA8B8"/></marker>
+  <marker id="arN" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#153A6B"/></marker>
+  <marker id="arA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6D3FA8"/></marker>
+  <marker id="arT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0E7A6B"/></marker>
+  <marker id="arR" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#A8322B"/></marker>
+  <marker id="arM" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#B5811A"/></marker>
+</defs></svg>
+
+
+<!-- ═══════════════ 1 · THE COLLAPSE ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k">01</span>
+    <h2>The same collapse, twenty years apart</h2>
+    <div class="s">Point-to-point → mediated · then agents → MCP</div>
+  </div>
+
+  <div class="dwrap">
+    <div class="dt">Application integration · 1998 – 2010</div>
+    <svg class="dg" viewBox="0 0 920 232" role="img" aria-label="Point to point integration collapsing into a mediated bus">
+      <text class="cap" x="8" y="12">① Point-to-point — N × M bespoke integrations</text>
+      <line class="e thin nomk" x1="118" y1="59"  x2="300" y2="59"/>
+      <line class="e thin nomk" x1="118" y1="59"  x2="300" y2="139"/>
+      <line class="e thin nomk" x1="118" y1="59"  x2="300" y2="179"/>
+      <line class="e thin nomk" x1="118" y1="99"  x2="300" y2="59"/>
+      <line class="e thin nomk" x1="118" y1="99"  x2="300" y2="99"/>
+      <line class="e thin nomk" x1="118" y1="99"  x2="300" y2="179"/>
+      <line class="e thin nomk" x1="118" y1="139" x2="300" y2="99"/>
+      <line class="e thin nomk" x1="118" y1="139" x2="300" y2="139"/>
+      <line class="e thin nomk" x1="118" y1="179" x2="300" y2="59"/>
+      <line class="e thin nomk" x1="118" y1="179" x2="300" y2="139"/>
+      <line class="e thin nomk" x1="118" y1="179" x2="300" y2="179"/>
+      <rect class="n" x="8" y="44"  width="110" height="30" rx="7"/><text class="t" x="63" y="63" text-anchor="middle">CRM</text>
+      <rect class="n" x="8" y="84"  width="110" height="30" rx="7"/><text class="t" x="63" y="103" text-anchor="middle">ERP</text>
+      <rect class="n" x="8" y="124" width="110" height="30" rx="7"/><text class="t" x="63" y="143" text-anchor="middle">Billing</text>
+      <rect class="n" x="8" y="164" width="110" height="30" rx="7"/><text class="t" x="63" y="183" text-anchor="middle">HR</text>
+      <rect class="n sys" x="300" y="44"  width="110" height="30" rx="7"/><text class="t" x="355" y="63" text-anchor="middle">Warehouse</text>
+      <rect class="n sys" x="300" y="84"  width="110" height="30" rx="7"/><text class="t" x="355" y="103" text-anchor="middle">Reporting</text>
+      <rect class="n sys" x="300" y="124" width="110" height="30" rx="7"/><text class="t" x="355" y="143" text-anchor="middle">Partner API</text>
+      <rect class="n sys" x="300" y="164" width="110" height="30" rx="7"/><text class="t" x="355" y="183" text-anchor="middle">Archive</text>
+      <text class="lbR" x="8" y="216">11 integrations · 11 owners · 11 upgrade paths · no shared policy</text>
+
+      <path class="e eN" d="M426,112 L470,112"/>
+      <text class="lb" x="448" y="102" text-anchor="middle">collapse</text>
+
+      <text class="cap" x="486" y="12">② Mediated — one contract per participant</text>
+      <line class="e thin nomk" x1="596" y1="59"  x2="632" y2="119"/>
+      <line class="e thin nomk" x1="596" y1="99"  x2="632" y2="119"/>
+      <line class="e thin nomk" x1="596" y1="139" x2="632" y2="119"/>
+      <line class="e thin nomk" x1="596" y1="179" x2="632" y2="119"/>
+      <line class="e thin nomk" x1="720" y1="119" x2="756" y2="59"/>
+      <line class="e thin nomk" x1="720" y1="119" x2="756" y2="99"/>
+      <line class="e thin nomk" x1="720" y1="119" x2="756" y2="139"/>
+      <line class="e thin nomk" x1="720" y1="119" x2="756" y2="179"/>
+      <rect class="n" x="486" y="44"  width="110" height="30" rx="7"/><text class="t" x="541" y="63" text-anchor="middle">CRM</text>
+      <rect class="n" x="486" y="84"  width="110" height="30" rx="7"/><text class="t" x="541" y="103" text-anchor="middle">ERP</text>
+      <rect class="n" x="486" y="124" width="110" height="30" rx="7"/><text class="t" x="541" y="143" text-anchor="middle">Billing</text>
+      <rect class="n" x="486" y="164" width="110" height="30" rx="7"/><text class="t" x="541" y="183" text-anchor="middle">HR</text>
+      <rect class="det" x="632" y="44" width="88" height="150" rx="10"/>
+      <text class="tb" x="676" y="113" text-anchor="middle">ESB /</text>
+      <text class="tb" x="676" y="130" text-anchor="middle">BROKER</text>
+      <rect class="n sys" x="756" y="44"  width="110" height="30" rx="7"/><text class="t" x="811" y="63" text-anchor="middle">Warehouse</text>
+      <rect class="n sys" x="756" y="84"  width="110" height="30" rx="7"/><text class="t" x="811" y="103" text-anchor="middle">Reporting</text>
+      <rect class="n sys" x="756" y="124" width="110" height="30" rx="7"/><text class="t" x="811" y="143" text-anchor="middle">Partner API</text>
+      <rect class="n sys" x="756" y="164" width="110" height="30" rx="7"/><text class="t" x="811" y="183" text-anchor="middle">Archive</text>
+      <text class="lbT" x="486" y="216">8 contracts · one mediation point · routing, translation and audit in one place</text>
+    </svg>
+  </div>
+
+  <div class="dwrap tint">
+    <div class="dt" style="color:var(--agent)">Agent integration · 2023 –</div>
+    <svg class="dg" viewBox="0 0 920 232" role="img" aria-label="Agents wiring bespoke adapters collapsing into MCP">
+      <text class="cap" x="8" y="12">① Every agent wires its own adapter</text>
+      <line class="e thin nomk" x1="118" y1="59"  x2="300" y2="59"/>
+      <line class="e thin nomk" x1="118" y1="59"  x2="300" y2="99"/>
+      <line class="e thin nomk" x1="118" y1="59"  x2="300" y2="139"/>
+      <line class="e thin nomk" x1="118" y1="59"  x2="300" y2="179"/>
+      <line class="e thin nomk" x1="118" y1="99"  x2="300" y2="59"/>
+      <line class="e thin nomk" x1="118" y1="99"  x2="300" y2="139"/>
+      <line class="e thin nomk" x1="118" y1="139" x2="300" y2="59"/>
+      <line class="e thin nomk" x1="118" y1="139" x2="300" y2="99"/>
+      <line class="e thin nomk" x1="118" y1="179" x2="300" y2="59"/>
+      <line class="e thin nomk" x1="118" y1="179" x2="300" y2="139"/>
+      <line class="e thin nomk" x1="118" y1="179" x2="300" y2="179"/>
+      <rect class="n ag" x="8" y="44"  width="110" height="30" rx="7"/><text class="t" x="63" y="63" text-anchor="middle">Ops Gate</text>
+      <rect class="n ag" x="8" y="84"  width="110" height="30" rx="7"/><text class="t" x="63" y="103" text-anchor="middle">Self-Healing</text>
+      <rect class="n ag" x="8" y="124" width="110" height="30" rx="7"/><text class="t" x="63" y="143" text-anchor="middle">CostAgent</text>
+      <rect class="n ag" x="8" y="164" width="110" height="30" rx="7"/><text class="t" x="63" y="183" text-anchor="middle">Modernization</text>
+      <rect class="n sys" x="300" y="44"  width="110" height="30" rx="7"/><text class="t" x="355" y="63" text-anchor="middle">Databricks</text>
+      <rect class="n sys" x="300" y="84"  width="110" height="30" rx="7"/><text class="t" x="355" y="103" text-anchor="middle">ServiceNow</text>
+      <rect class="n sys" x="300" y="124" width="110" height="30" rx="7"/><text class="t" x="355" y="143" text-anchor="middle">Git / IaC</text>
+      <rect class="n sys" x="300" y="164" width="110" height="30" rx="7"/><text class="t" x="355" y="183" text-anchor="middle">Catalog</text>
+      <text class="lbR" x="8" y="216">N × M adapters · authz, validation and audit re-implemented per team</text>
+
+      <path class="e eN" d="M426,112 L470,112"/>
+      <text class="lb" x="448" y="102" text-anchor="middle">collapse</text>
+
+      <text class="cap" x="486" y="12">② MCP — one protocol, one adapter per system</text>
+      <line class="e thin nomk" x1="596" y1="59"  x2="632" y2="119"/>
+      <line class="e thin nomk" x1="596" y1="99"  x2="632" y2="119"/>
+      <line class="e thin nomk" x1="596" y1="139" x2="632" y2="119"/>
+      <line class="e thin nomk" x1="596" y1="179" x2="632" y2="119"/>
+      <line class="e thin nomk" x1="720" y1="119" x2="756" y2="59"/>
+      <line class="e thin nomk" x1="720" y1="119" x2="756" y2="99"/>
+      <line class="e thin nomk" x1="720" y1="119" x2="756" y2="139"/>
+      <line class="e thin nomk" x1="720" y1="119" x2="756" y2="179"/>
+      <rect class="n ag" x="486" y="44"  width="110" height="30" rx="7"/><text class="t" x="541" y="63" text-anchor="middle">Ops Gate</text>
+      <rect class="n ag" x="486" y="84"  width="110" height="30" rx="7"/><text class="t" x="541" y="103" text-anchor="middle">Self-Healing</text>
+      <rect class="n ag" x="486" y="124" width="110" height="30" rx="7"/><text class="t" x="541" y="143" text-anchor="middle">CostAgent</text>
+      <rect class="n ag" x="486" y="164" width="110" height="30" rx="7"/><text class="t" x="541" y="183" text-anchor="middle">Modernization</text>
+      <rect class="det" x="632" y="44" width="88" height="150" rx="10"/>
+      <text class="tb" x="676" y="115" text-anchor="middle">MCP</text>
+      <text class="s" x="676" y="132" text-anchor="middle">servers</text>
+      <rect class="n sys" x="756" y="44"  width="110" height="30" rx="7"/><text class="t" x="811" y="63" text-anchor="middle">Databricks</text>
+      <rect class="n sys" x="756" y="84"  width="110" height="30" rx="7"/><text class="t" x="811" y="103" text-anchor="middle">ServiceNow</text>
+      <rect class="n sys" x="756" y="124" width="110" height="30" rx="7"/><text class="t" x="811" y="143" text-anchor="middle">Git / IaC</text>
+      <rect class="n sys" x="756" y="164" width="110" height="30" rx="7"/><text class="t" x="811" y="183" text-anchor="middle">Catalog</text>
+      <text class="lbT" x="486" y="216">one adapter per system · discovery and semantics travel with the contract</text>
+    </svg>
+  </div>
+
+  <div class="grid g2">
+    <div class="say">
+      <span class="lbl">Say this</span>
+      <p>That's the same diagram twice, twenty years apart. MCP is the <b>JDBC moment for tools</b> — one
+      protocol instead of N×M bespoke adapters. Recognising the shape is what stops you re-solving problems
+      the industry solved in 2003.</p>
+    </div>
+    <div class="say warn">
+      <span class="lbl">And immediately: where it differs</span>
+      <p>The ESB mediated <b>deterministic callers</b> a reviewer had read. MCP mediates a
+      <b>probabilistic caller</b> invoking arbitrary side effects. So this diagram buys standardisation,
+      not safety — the next four pages are what has to sit inside that box.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>The same collapse, twenty years apart</span><span>1 / 9</span></div>
+</div>
+
+
+<!-- ═══════════════ 2 · THREE-PLANE TOPOLOGY ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k ag">02</span>
+    <h2>The three-plane topology</h2>
+    <div class="s">Software · agentic · human — and the bar everything must cross</div>
+  </div>
+
+  <div class="dwrap">
+    <svg class="dg" viewBox="0 0 920 452" role="img" aria-label="Three plane topology with a deterministic validating adapter between the agent plane and the software plane">
+      <rect class="band" x="0" y="16"  width="920" height="92" rx="10" fill="#FBF5E9" opacity=".55"/>
+      <rect class="band" x="0" y="132" width="920" height="106" rx="10" fill="#F5F1FB" opacity=".55"/>
+      <rect class="band" x="0" y="330" width="920" height="106" rx="10" fill="#EEF3FA" opacity=".6"/>
+      <text class="cap" x="12" y="34" style="fill:var(--amber)">Human systems</text>
+      <text class="cap" x="12" y="150" style="fill:var(--agent)">Agentic systems</text>
+      <text class="cap" x="12" y="348" style="fill:var(--navy)">Software systems</text>
+
+      <!-- human nodes -->
+      <rect class="n hu" x="180" y="44" width="180" height="50" rx="9"/>
+      <text class="t" x="270" y="66" text-anchor="middle">Approver / signatory</text>
+      <text class="s" x="270" y="81" text-anchor="middle">accountable, named</text>
+      <rect class="n hu" x="560" y="44" width="190" height="50" rx="9"/>
+      <text class="t" x="655" y="66" text-anchor="middle">Engineer / product owner</text>
+      <text class="s" x="655" y="81" text-anchor="middle">sets intent and policy</text>
+
+      <!-- agent nodes -->
+      <rect class="n ag" x="150" y="160" width="170" height="52" rx="9"/>
+      <text class="t" x="235" y="182" text-anchor="middle">Reverse-engineer</text>
+      <text class="t" x="235" y="197" text-anchor="middle">agent</text>
+      <rect class="n ag" x="375" y="160" width="170" height="52" rx="9" style="stroke-width:2.5"/>
+      <text class="t" x="460" y="182" text-anchor="middle">Ops Gate</text>
+      <text class="t" x="460" y="197" text-anchor="middle">orchestrator</text>
+      <rect class="n ag" x="600" y="160" width="170" height="52" rx="9"/>
+      <text class="t" x="685" y="182" text-anchor="middle">Self-healing</text>
+      <text class="t" x="685" y="197" text-anchor="middle">agent</text>
+
+      <!-- A2A -->
+      <path class="e eA" d="M375,186 L326,186"/>
+      <path class="e eA" d="M545,186 L594,186"/>
+      <text class="lbA" x="350" y="230" text-anchor="middle">A2A</text>
+      <text class="lbA" x="570" y="230" text-anchor="middle">A2A</text>
+
+      <!-- A to H -->
+      <path class="e eM" d="M420,160 C400,130 330,116 292,98"/>
+      <text class="lb" x="330" y="128" text-anchor="middle" style="fill:var(--amber)">typed approval + evidence</text>
+      <path class="e eM" d="M640,96 C600,124 540,142 508,158"/>
+      <text class="lb" x="612" y="140" text-anchor="middle" style="fill:var(--amber)">intent · policy · guardrails</text>
+
+      <!-- the bar -->
+      <rect class="det" x="40" y="258" width="840" height="46" rx="9"/>
+      <text class="tb" x="460" y="279" text-anchor="middle">DETERMINISTIC VALIDATING ADAPTER</text>
+      <text class="s" x="460" y="294" text-anchor="middle">schema · semantic precondition · policy &amp; side-effect class · budget · scoped credential · audit</text>
+
+      <path class="e eA" d="M235,214 L235,254"/>
+      <path class="e eA" d="M460,214 L460,254"/>
+      <path class="e eA" d="M685,214 L685,254"/>
+      <path class="e eN" d="M235,306 L235,344"/>
+      <path class="e eN" d="M460,306 L460,344"/>
+      <path class="e eN" d="M685,306 L685,344"/>
+
+      <!-- software nodes -->
+      <rect class="n sys" x="150" y="348" width="170" height="52" rx="9"/>
+      <text class="t" x="235" y="370" text-anchor="middle">System of record</text>
+      <text class="s" x="235" y="385" text-anchor="middle">GxP-relevant</text>
+      <rect class="n sys" x="375" y="348" width="170" height="52" rx="9"/>
+      <text class="t" x="460" y="370" text-anchor="middle">Lakehouse</text>
+      <text class="s" x="460" y="385" text-anchor="middle">catalog &amp; lineage</text>
+      <rect class="n sys" x="600" y="348" width="170" height="52" rx="9"/>
+      <text class="t" x="685" y="370" text-anchor="middle">Observability</text>
+      <text class="s" x="685" y="385" text-anchor="middle">metrics · logs · traces</text>
+
+      <path class="e dash nomk" d="M235,412 L685,412"/>
+      <text class="lb" x="460" y="430" text-anchor="middle">classic EIP — events · contracts · CDC · messaging (unchanged)</text>
+    </svg>
+    <p class="dcap"><b>Read it top to bottom.</b> Humans set intent and receive typed approvals. Agents plan,
+    delegate and propose. <b>Nothing reaches the software plane without crossing the deterministic bar</b> —
+    and the bar is not part of the agent, so it cannot be reasoned around.</p>
+  </div>
+
+  <div class="grid g3">
+    <div class="box" style="border-left:4px solid var(--agent)">
+      <b class="t">The bar is the architecture</b>
+      <p class="n">Every arrow from the agent plane to the software plane passes through one deterministic
+      component. That is the whole safety argument in a single visual.</p>
+    </div>
+    <div class="box" style="border-left:4px solid var(--amber)">
+      <b class="t">A→H is an arrow, not a chat</b>
+      <p class="n">Typed approval object with evidence, blast radius, reversibility and expiry. If it can't
+      be replayed a year later, it isn't a control.</p>
+    </div>
+    <div class="box" style="border-left:4px solid var(--navy)">
+      <b class="t">The bottom row didn't change</b>
+      <p class="n">System-to-system integration is still events, contracts and CDC. The agentic layer sits
+      <em>on top of</em> the estate — it doesn't replace how the estate talks to itself.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>The three-plane topology</span><span>2 / 9</span></div>
+</div>
+
+
+<!-- ═══════════════ 3 · THE VALIDATING ADAPTER ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k rd">03</span>
+    <h2>Inside the bar — the validating adapter</h2>
+    <div class="s">The A→S edge, zoomed · where the design budget goes</div>
+  </div>
+
+  <div class="dwrap">
+    <svg class="dg" viewBox="0 0 920 336" role="img" aria-label="Anatomy of a validating adapter between an agent and a system of record">
+      <rect class="n ag" x="8" y="102" width="126" height="66" rx="9"/>
+      <text class="t" x="71" y="128" text-anchor="middle">Agent</text>
+      <text class="s" x="71" y="144" text-anchor="middle">proposes a call</text>
+      <path class="e eA" d="M134,135 L172,135"/>
+
+      <rect class="det" x="176" y="62" width="530" height="146" rx="10"/>
+      <text class="cap" x="441" y="82" text-anchor="middle" style="fill:var(--navy)">Deterministic validating adapter</text>
+
+      <rect class="n" x="186" y="102" width="94" height="66" rx="8"/>
+      <text class="t" x="233" y="128" text-anchor="middle">Schema</text>
+      <text class="s" x="233" y="144" text-anchor="middle">validate</text>
+      <rect class="n" x="290" y="102" width="94" height="66" rx="8"/>
+      <text class="t" x="337" y="128" text-anchor="middle">Semantic</text>
+      <text class="s" x="337" y="144" text-anchor="middle">precondition</text>
+      <rect class="n" x="394" y="102" width="94" height="66" rx="8"/>
+      <text class="t" x="441" y="128" text-anchor="middle">Policy &amp;</text>
+      <text class="s" x="441" y="144" text-anchor="middle">effect class</text>
+      <rect class="n" x="498" y="102" width="94" height="66" rx="8"/>
+      <text class="t" x="545" y="128" text-anchor="middle">Budget &amp;</text>
+      <text class="s" x="545" y="144" text-anchor="middle">rate limit</text>
+      <rect class="n" x="602" y="102" width="94" height="66" rx="8"/>
+      <text class="t" x="649" y="128" text-anchor="middle">Scoped</text>
+      <text class="s" x="649" y="144" text-anchor="middle">credential</text>
+      <path class="e eN" d="M280,135 L288,135"/>
+      <path class="e eN" d="M384,135 L392,135"/>
+      <path class="e eN" d="M488,135 L496,135"/>
+      <path class="e eN" d="M592,135 L600,135"/>
+
+      <path class="e eN" d="M706,135 L748,135"/>
+      <rect class="n sys" x="752" y="102" width="160" height="66" rx="9"/>
+      <text class="t" x="832" y="128" text-anchor="middle">System of record</text>
+      <text class="s" x="832" y="144" text-anchor="middle">idempotent · reversible</text>
+
+      <path class="e eR dash" d="M233,168 L233,246"/>
+      <rect class="n bad" x="146" y="250" width="180" height="56" rx="9"/>
+      <text class="t" x="236" y="272" text-anchor="middle" style="fill:var(--red)">Rejected → dead-letter</text>
+      <text class="s" x="236" y="288" text-anchor="middle">reject, never coerce</text>
+
+      <path class="e eM dash" d="M441,168 L441,246"/>
+      <rect class="n hu" x="346" y="250" width="190" height="56" rx="9"/>
+      <text class="t" x="441" y="272" text-anchor="middle" style="fill:var(--amber)">Human gate</text>
+      <text class="s" x="441" y="288" text-anchor="middle">irreversible · privileged</text>
+
+      <path class="e eT dash" d="M649,168 L649,246"/>
+      <rect class="n ok" x="556" y="250" width="190" height="56" rx="9"/>
+      <text class="t" x="651" y="272" text-anchor="middle" style="fill:var(--teal)">Evidence bundle</text>
+      <text class="s" x="651" y="288" text-anchor="middle">who · what · why · when</text>
+
+      <path class="e eT dash" d="M832,168 L832,246"/>
+      <rect class="n ok" x="766" y="250" width="146" height="56" rx="9"/>
+      <text class="t" x="839" y="272" text-anchor="middle" style="fill:var(--teal)">Decision trace</text>
+      <text class="s" x="839" y="288" text-anchor="middle">model + prompt version</text>
+    </svg>
+    <p class="dcap"><b>Five deterministic checks, three exits.</b> The agent's proposal is never executed
+    directly — it is validated, classed, budgeted, then executed under a credential the agent never holds.
+    <b>Reject rather than coerce</b> is the critical detail: coercing a malformed call into a valid one is
+    how you get a confidently wrong action.</p>
+  </div>
+
+  <div class="grid g2">
+    <div class="say warn">
+      <span class="lbl">The rule this diagram encodes</span>
+      <p>The agent never gets raw access — no direct SQL, no admin API, no shell. Shared-database
+      integration was already an anti-pattern between two deterministic services; <b>it doesn't become
+      acceptable because the caller is now an LLM.</b></p>
+    </div>
+    <div class="say">
+      <span class="lbl">Why this is the reusable asset</span>
+      <p>This adapter is a <b>template</b>, not a per-project build. Every MCP server in the estate inherits
+      authz, validation, budget and audit by construction. That is what makes "reuse" a fact rather than an
+      aspiration — and it's the T3 evidence.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>Inside the bar — the validating adapter</span><span>3 / 9</span></div>
+</div>
+
+
+<!-- ═══════════════ 4 · THE PIPELINE ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k ag">04</span>
+    <h2>The deterministic / agentic pipeline</h2>
+    <div class="s">Observe → propose → validate → execute → record, with its branches</div>
+  </div>
+
+  <div class="dwrap">
+    <svg class="dg" viewBox="0 0 920 312" role="img" aria-label="Five stage pipeline with reject loop, human gate and evidence branches">
+      <rect class="n ok" x="694" y="10" width="218" height="48" rx="9"/>
+      <text class="t" x="803" y="31" text-anchor="middle" style="fill:var(--teal)">Immutable evidence store</text>
+      <text class="s" x="803" y="47" text-anchor="middle">lineage · decision trace · signed bundle</text>
+
+      <text class="cap" x="82"  y="94" text-anchor="middle">Deterministic</text>
+      <text class="cap" x="262" y="94" text-anchor="middle" style="fill:var(--agent)">Agentic — LLM</text>
+      <text class="cap" x="442" y="94" text-anchor="middle">Deterministic</text>
+      <text class="cap" x="622" y="94" text-anchor="middle">Deterministic</text>
+      <text class="cap" x="802" y="94" text-anchor="middle">Deterministic</text>
+
+      <rect class="n sys" x="8"   y="104" width="148" height="74" rx="9"/>
+      <text class="tb" x="82" y="134" text-anchor="middle">Observe</text>
+      <text class="s"  x="82" y="152" text-anchor="middle">telemetry · logs · code</text>
+      <text class="s"  x="82" y="166" text-anchor="middle">catalog · IaC</text>
+
+      <rect class="n ag" x="188" y="104" width="148" height="74" rx="9" style="stroke-width:2.5"/>
+      <text class="tb" x="262" y="134" text-anchor="middle" style="fill:var(--agent)">Propose</text>
+      <text class="s"  x="262" y="152" text-anchor="middle">interpret · diagnose</text>
+      <text class="s"  x="262" y="166" text-anchor="middle">recommend · draft</text>
+
+      <rect class="n sys" x="368" y="104" width="148" height="74" rx="9"/>
+      <text class="tb" x="442" y="134" text-anchor="middle">Validate</text>
+      <text class="s"  x="442" y="152" text-anchor="middle">schema · policy · cost</text>
+      <text class="s"  x="442" y="166" text-anchor="middle">blast radius</text>
+
+      <rect class="n sys" x="548" y="104" width="148" height="74" rx="9"/>
+      <text class="tb" x="622" y="134" text-anchor="middle">Execute</text>
+      <text class="s"  x="622" y="152" text-anchor="middle">idempotent</text>
+      <text class="s"  x="622" y="166" text-anchor="middle">reversible · scoped</text>
+
+      <rect class="n sys" x="728" y="104" width="148" height="74" rx="9"/>
+      <text class="tb" x="802" y="134" text-anchor="middle">Record</text>
+      <text class="s"  x="802" y="152" text-anchor="middle">evidence by</text>
+      <text class="s"  x="802" y="166" text-anchor="middle">construction</text>
+
+      <path class="e eN" d="M156,141 L184,141"/>
+      <path class="e eA" d="M336,141 L364,141"/>
+      <path class="e eN" d="M516,141 L544,141"/>
+      <path class="e eN" d="M696,141 L724,141"/>
+      <path class="e eT" d="M802,104 L802,62"/>
+
+      <!-- reject loop back to propose -->
+      <path class="e eR dash" d="M400,178 L400,222"/>
+      <rect class="n bad" x="300" y="226" width="200" height="52" rx="9"/>
+      <text class="t" x="400" y="248" text-anchor="middle" style="fill:var(--red)">Reject → re-plan</text>
+      <text class="s" x="400" y="264" text-anchor="middle">bounded retries, then dead-letter</text>
+      <path class="e eR dash" d="M300,252 L262,252 L262,182"/>
+
+      <!-- human gate -->
+      <path class="e eM dash" d="M484,178 L484,222"/>
+      <rect class="n hu" x="528" y="226" width="200" height="52" rx="9"/>
+      <text class="t" x="628" y="248" text-anchor="middle" style="fill:var(--amber)">Human gate</text>
+      <text class="s" x="628" y="264" text-anchor="middle">by side-effect class · deny on timeout</text>
+      <path class="e eM dash" d="M484,222 L520,240"/>
+      <path class="e eM dash" d="M728,240 L780,240 L780,182"/>
+    </svg>
+    <p class="dcap"><b>Four of five stages are deterministic.</b> The LLM occupies one — the stage where
+    judgement is genuinely required — and has no authority in any other. Rejection loops back to a bounded
+    re-plan; irreversible and privileged actions divert to a human before execution; evidence is emitted by
+    the run rather than assembled before an audit.</p>
+  </div>
+
+  <div class="say ag">
+    <span class="lbl">Say this</span>
+    <p>Most people demo an agent that <b>decides</b>. This one is explicitly designed so the agent
+    <b>proposes</b> and the deterministic control plane <b>disposes</b> — which is precisely why it can go
+    into a GxP-relevant path at all. The non-determinism is boxed in on both sides.</p>
+  </div>
+
+  <div class="ftr"><span>The deterministic / agentic pipeline</span><span>4 / 9</span></div>
+</div>
+
+
+<!-- ═══════════════ 5 · EIP SHAPES, TWO NAMES ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k tl">05</span>
+    <h2>Same shapes, new names</h2>
+    <div class="s">Four classic EIP patterns — and their agentic labels</div>
+  </div>
+
+  <div class="grid g2">
+    <div class="dwrap">
+      <div class="dt">Split by content</div>
+      <svg class="dg" viewBox="0 0 430 132" role="img" aria-label="Router pattern">
+        <rect class="n" x="6" y="48" width="82" height="36" rx="7"/>
+        <text class="t" x="47" y="70" text-anchor="middle">Request</text>
+        <path class="e eN" d="M88,66 L126,66"/>
+        <rect class="n det" x="130" y="36" width="90" height="60" rx="8"/>
+        <text class="t" x="175" y="62" text-anchor="middle">ROUTER</text>
+        <text class="s" x="175" y="78" text-anchor="middle">classify</text>
+        <path class="e eN" d="M220,56 L262,32"/>
+        <path class="e eN" d="M220,66 L262,66"/>
+        <path class="e eN" d="M220,76 L262,100"/>
+        <rect class="n sys" x="266" y="16" width="116" height="30" rx="7"/><text class="t" x="324" y="35" text-anchor="middle">Handler A</text>
+        <rect class="n sys" x="266" y="51" width="116" height="30" rx="7"/><text class="t" x="324" y="70" text-anchor="middle">Handler B</text>
+        <rect class="n sys" x="266" y="86" width="116" height="30" rx="7"/><text class="t" x="324" y="105" text-anchor="middle">Handler C</text>
+      </svg>
+      <p class="dcap"><b>EIP · content-based router</b> &nbsp;→&nbsp; <b style="color:var(--agent)">Agentic ·
+      classify-then-dispatch.</b> The classifier changed from a rule to a model. The shape, the failure mode
+      and the need for a default route did not.</p>
+    </div>
+
+    <div class="dwrap">
+      <div class="dt">Fan out, then combine</div>
+      <svg class="dg" viewBox="0 0 430 132" role="img" aria-label="Scatter gather pattern">
+        <rect class="n" x="6" y="48" width="80" height="36" rx="7"/>
+        <text class="t" x="46" y="70" text-anchor="middle">Task</text>
+        <path class="e eN" d="M86,66 L136,32"/>
+        <path class="e eN" d="M86,66 L136,66"/>
+        <path class="e eN" d="M86,66 L136,100"/>
+        <rect class="n ag" x="140" y="16" width="110" height="30" rx="7"/><text class="t" x="195" y="35" text-anchor="middle">Worker 1</text>
+        <rect class="n ag" x="140" y="51" width="110" height="30" rx="7"/><text class="t" x="195" y="70" text-anchor="middle">Worker 2</text>
+        <rect class="n ag" x="140" y="86" width="110" height="30" rx="7"/><text class="t" x="195" y="105" text-anchor="middle">Worker 3</text>
+        <path class="e eN" d="M250,32 L294,58"/>
+        <path class="e eN" d="M250,66 L294,66"/>
+        <path class="e eN" d="M250,100 L294,74"/>
+        <rect class="n det" x="298" y="36" width="112" height="60" rx="8"/>
+        <text class="t" x="354" y="62" text-anchor="middle">AGGREGATE</text>
+        <text class="s" x="354" y="78" text-anchor="middle">reconcile</text>
+      </svg>
+      <p class="dcap"><b>EIP · scatter-gather</b> &nbsp;→&nbsp; <b style="color:var(--agent)">Agentic ·
+      parallel subagents.</b> New wrinkle: workers can now <em>disagree</em>, so the aggregator needs a
+      conflict rule — majority, highest-confidence, or escalate.</p>
+    </div>
+
+    <div class="dwrap">
+      <div class="dt">Coordinate a multi-step job</div>
+      <svg class="dg" viewBox="0 0 430 132" role="img" aria-label="Process manager pattern">
+        <rect class="n det" x="150" y="8" width="130" height="42" rx="8"/>
+        <text class="t" x="215" y="28" text-anchor="middle">COORDINATOR</text>
+        <text class="s" x="215" y="43" text-anchor="middle">holds the plan</text>
+        <path class="e eN" d="M180,50 L86,86"/>
+        <path class="e eN" d="M215,50 L215,84"/>
+        <path class="e eN" d="M250,50 L344,86"/>
+        <rect class="n ag" x="26" y="88" width="120" height="34" rx="7"/><text class="t" x="86" y="110" text-anchor="middle">Step A</text>
+        <rect class="n ag" x="155" y="88" width="120" height="34" rx="7"/><text class="t" x="215" y="110" text-anchor="middle">Step B</text>
+        <rect class="n ag" x="284" y="88" width="120" height="34" rx="7"/><text class="t" x="344" y="110" text-anchor="middle">Step C</text>
+      </svg>
+      <p class="dcap"><b>EIP · process manager</b> &nbsp;→&nbsp; <b style="color:var(--agent)">Agentic ·
+      orchestrator–worker.</b> The plan used to be static. Now it's generated — so it needs a depth cap, a
+      budget and a termination condition the coordinator cannot talk itself out of.</p>
+    </div>
+
+    <div class="dwrap">
+      <div class="dt">Handle what fails</div>
+      <svg class="dg" viewBox="0 0 430 132" role="img" aria-label="Dead letter channel pattern">
+        <rect class="n" x="6" y="48" width="80" height="36" rx="7"/>
+        <text class="t" x="46" y="70" text-anchor="middle">Run</text>
+        <path class="e eN" d="M86,66 L128,66"/>
+        <rect class="n det" x="132" y="36" width="106" height="60" rx="8"/>
+        <text class="t" x="185" y="62" text-anchor="middle">PROCESS</text>
+        <text class="s" x="185" y="78" text-anchor="middle">bounded retry</text>
+        <path class="e eT" d="M238,54 L282,34"/>
+        <path class="e eR" d="M238,78 L282,98"/>
+        <rect class="n ok"  x="286" y="18" width="126" height="32" rx="7"/><text class="t" x="349" y="38" text-anchor="middle" style="fill:var(--teal)">Completed</text>
+        <rect class="n bad" x="286" y="82" width="126" height="34" rx="7"/>
+        <text class="t" x="349" y="97" text-anchor="middle" style="fill:var(--red)">Dead letter</text>
+        <text class="s" x="349" y="110" text-anchor="middle">parked · visible</text>
+      </svg>
+      <p class="dcap"><b>EIP · dead letter channel</b> &nbsp;→&nbsp; <b style="color:var(--agent)">Agentic ·
+      parked run.</b> The failure mode to avoid is an agent silently retrying forever. Failed runs are
+      parked, visible and triaged — never swallowed.</p>
+    </div>
+  </div>
+
+  <div class="say" style="margin-top:14px">
+    <span class="lbl">Say this</span>
+    <p>Four diagrams, eight names. <b>The shapes are twenty years old</b> — that's not a criticism, it's the
+    reason I can put agents into a regulated estate with a straight face. We're not starting from zero on
+    safety; we're applying a mature catalogue to a new kind of caller.</p>
+  </div>
+
+  <div class="ftr"><span>Same shapes, new names</span><span>5 / 9</span></div>
+</div>
+
+
+<!-- ═══════════════ 6 · BLAST RADIUS ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k rd">06</span>
+    <h2>Blast radius — scope tools, not intentions</h2>
+    <div class="s">The bulkhead pattern, applied to agents</div>
+  </div>
+
+  <div class="dwrap">
+    <svg class="dg" viewBox="0 0 920 300" role="img" aria-label="Broad scope agent versus bulkheaded agents">
+      <text class="cap" x="8" y="14" style="fill:var(--red)">✕ One agent, one credential, everything in reach</text>
+      <rect class="zbad" x="152" y="28" width="278" height="232" rx="12"/>
+      <rect class="n ag" x="8" y="122" width="130" height="56" rx="9"/>
+      <text class="t" x="73" y="145" text-anchor="middle">Ops agent</text>
+      <text class="s" x="73" y="161" text-anchor="middle">admin credential</text>
+      <path class="e eR" d="M138,150 L148,150"/>
+      <rect class="n" x="168" y="46"  width="118" height="38" rx="7"/><text class="t" x="227" y="70" text-anchor="middle">Prod DB</text>
+      <rect class="n" x="168" y="104" width="118" height="38" rx="7"/><text class="t" x="227" y="128" text-anchor="middle">IAM</text>
+      <rect class="n" x="168" y="162" width="118" height="38" rx="7"/><text class="t" x="227" y="186" text-anchor="middle">Payments</text>
+      <rect class="n" x="296" y="46"  width="118" height="38" rx="7"/><text class="t" x="355" y="70" text-anchor="middle">Pipelines</text>
+      <rect class="n" x="296" y="104" width="118" height="38" rx="7"/><text class="t" x="355" y="128" text-anchor="middle">Email</text>
+      <rect class="n" x="296" y="162" width="118" height="38" rx="7"/><text class="t" x="355" y="186" text-anchor="middle">Config</text>
+      <text class="lbR" x="291" y="228" text-anchor="middle">blast radius = every system in scope</text>
+      <text class="s" x="291" y="245" text-anchor="middle">one hijack, one bad plan, one over-broad call — same result</text>
+
+      <line class="e thin nomk" x1="460" y1="20" x2="460" y2="280" stroke="#D8DFE8" stroke-dasharray="4 5"/>
+
+      <text class="cap" x="492" y="14" style="fill:var(--teal)">✓ Bulkheaded — one agent, one purpose, one credential</text>
+      <rect class="zok" x="620" y="28" width="292" height="70" rx="10"/>
+      <rect class="zok" x="620" y="112" width="292" height="70" rx="10"/>
+      <rect class="zok" x="620" y="196" width="292" height="70" rx="10"/>
+      <rect class="n ag" x="492" y="44" width="112" height="38" rx="7"/><text class="t" x="548" y="68" text-anchor="middle">Cost agent</text>
+      <rect class="n ag" x="492" y="128" width="112" height="38" rx="7"/><text class="t" x="548" y="152" text-anchor="middle">Gate agent</text>
+      <rect class="n ag" x="492" y="212" width="112" height="38" rx="7"/><text class="t" x="548" y="236" text-anchor="middle">Heal agent</text>
+      <path class="e eT" d="M604,63 L616,63"/>
+      <path class="e eT" d="M604,147 L616,147"/>
+      <path class="e eT" d="M604,231 L616,231"/>
+      <rect class="n" x="632" y="44"  width="128" height="38" rx="7"/><text class="t" x="696" y="68" text-anchor="middle">Billing API</text>
+      <rect class="n" x="772" y="44"  width="128" height="38" rx="7"/><text class="t" x="836" y="68" text-anchor="middle">Usage logs</text>
+      <rect class="n" x="632" y="128" width="128" height="38" rx="7"/><text class="t" x="696" y="152" text-anchor="middle">Git / IaC</text>
+      <rect class="n" x="772" y="128" width="128" height="38" rx="7"/><text class="t" x="836" y="152" text-anchor="middle">Catalog</text>
+      <rect class="n" x="632" y="212" width="128" height="38" rx="7"/><text class="t" x="696" y="236" text-anchor="middle">Sandbox</text>
+      <rect class="n" x="772" y="212" width="128" height="38" rx="7"/><text class="t" x="836" y="236" text-anchor="middle">Metrics</text>
+      <text class="lbT" x="706" y="288" text-anchor="middle">blast radius = one scope · a failure is contained to one lane</text>
+    </svg>
+  </div>
+
+  <div class="grid g2">
+    <div class="say warn">
+      <span class="lbl">The formula</span>
+      <p>Blast radius = the union of what <b>every tool in that agent's scope can reach</b>. Not what it's
+      <em>likely</em> to do — what it <em>can</em> do.</p>
+      <p><b>Prompts and instructions are guidance. The credential and the tool list are the control.</b>
+      "We told the agent not to" has never been an acceptable answer to a security architect.</p>
+    </div>
+    <div class="box tint">
+      <b class="t">The follow-up, and the answer</b>
+      <p class="n"><em>"What if an agent genuinely needs broad access?"</em></p>
+      <p class="n">It doesn't get one agent with broad access. It gets several narrowly-scoped agents and a
+      <b>deterministic orchestrator</b> holding the composition — which is the right-hand diagram. The
+      orchestrator has the breadth; no single agent does, and the orchestrator isn't an LLM.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>Blast radius — scope tools, not intentions</span><span>6 / 9</span></div>
+</div>
+
+
+<!-- ═══════════════ 7 · TRUST BOUNDARY ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k rd">07</span>
+    <h2>The trust boundary</h2>
+    <div class="s">Control plane vs data plane — this generation's SQL injection</div>
+  </div>
+
+  <div class="dwrap">
+    <svg class="dg" viewBox="0 0 920 316" role="img" aria-label="Control plane and data plane separated by a trust boundary">
+      <rect class="band" x="8" y="14" width="904" height="86" rx="10" fill="#EEF3FA"/>
+      <text class="cap" x="20" y="33" style="fill:var(--navy)">Control plane — trusted, authored, versioned</text>
+      <rect class="n" x="26" y="42" width="264" height="44" rx="8"/>
+      <text class="t" x="158" y="63" text-anchor="middle">System instructions</text>
+      <text class="s" x="158" y="78" text-anchor="middle">versioned, reviewed, pinned</text>
+      <rect class="n" x="326" y="42" width="264" height="44" rx="8"/>
+      <text class="t" x="458" y="63" text-anchor="middle">Policy &amp; tool list</text>
+      <text class="s" x="458" y="78" text-anchor="middle">what this agent may do</text>
+      <rect class="n" x="626" y="42" width="264" height="44" rx="8"/>
+      <text class="t" x="758" y="63" text-anchor="middle">Scoped credentials</text>
+      <text class="s" x="758" y="78" text-anchor="middle">short-lived, on-behalf-of</text>
+
+      <path class="e eN" d="M400,100 L400,146"/>
+      <text class="lb" x="330" y="126" text-anchor="middle">instructions · authority</text>
+
+      <rect class="n ag" x="352" y="150" width="216" height="56" rx="9" style="stroke-width:2.5"/>
+      <text class="tb" x="460" y="174" text-anchor="middle" style="fill:var(--agent)">Agent</text>
+      <text class="s" x="460" y="191" text-anchor="middle">assume it can be hijacked</text>
+
+      <path class="e eA" d="M520,242 L520,208"/>
+      <text class="lb" x="608" y="228" text-anchor="middle">content only — tagged untrusted</text>
+
+      <rect class="zbad" x="8" y="246" width="904" height="62" rx="10"/>
+      <text class="cap" x="20" y="264" style="fill:var(--red)">Data plane — untrusted, whatever arrives</text>
+      <rect class="n bad" x="200" y="270" width="180" height="30" rx="7"/><text class="t" x="290" y="290" text-anchor="middle">Retrieved documents</text>
+      <rect class="n bad" x="392" y="270" width="180" height="30" rx="7"/><text class="t" x="482" y="290" text-anchor="middle">Tickets &amp; logs</text>
+      <rect class="n bad" x="584" y="270" width="180" height="30" rx="7"/><text class="t" x="674" y="290" text-anchor="middle">Web / email content</text>
+
+      <path class="e eR dash nomk" d="M866,268 L866,110"/>
+      <circle cx="866" cy="190" r="17" fill="#FCF3F2" stroke="#A8322B" stroke-width="2"/>
+      <path d="M859,183 L873,197 M873,183 L859,197" stroke="#A8322B" stroke-width="2.4" fill="none"/>
+      <text class="lbR" x="866" y="228" text-anchor="middle">blocked</text>
+      <text class="lbR" x="866" y="242" text-anchor="middle">never instructions</text>
+    </svg>
+    <p class="dcap"><b>The single rule:</b> content flows <em>up</em> as data and is never promoted to
+    instruction. A document can tell the agent a fact; it can never tell the agent what it is allowed to do —
+    because authority comes from the control plane, which the data plane cannot reach.</p>
+  </div>
+
+  <div class="grid g2">
+    <div class="say warn">
+      <span class="lbl">The honest concession — make it early</span>
+      <p>It's this generation's SQL injection: untrusted data crossing into the control path. But with SQLi
+      we got parameterised queries — a complete structural fix. <b>There is no equivalent complete fix
+      here yet</b>, and I'd be wary of anyone who says there is.</p>
+    </div>
+    <div class="say">
+      <span class="lbl">Which is why the defence is architectural</span>
+      <p>My primary control isn't detection, it's <b>capability scoping</b> — assume the agent can be
+      hijacked and make sure a hijacked agent still can't do much. I can't stop injection. <b>I can bound
+      the consequence</b>, and that's the design goal.</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>The trust boundary</span><span>7 / 9</span></div>
+</div>
+
+
+<!-- ═══════════════ 8 · A2A ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k ag">08</span>
+    <h2>Agent-to-agent delegation</h2>
+    <div class="s">Treat it as untrusted inter-service messaging — because that's what it is</div>
+  </div>
+
+  <div class="dwrap">
+    <svg class="dg" viewBox="0 0 920 292" role="img" aria-label="Agent to agent delegation with shrinking scope and a depth cap">
+      <rect class="n hu" x="8" y="118" width="118" height="56" rx="9"/>
+      <text class="t" x="67" y="141" text-anchor="middle">Requester</text>
+      <text class="s" x="67" y="157" text-anchor="middle">scope: A B C D</text>
+      <path class="e eM" d="M126,146 L168,146"/>
+
+      <rect class="n ag" x="172" y="110" width="170" height="72" rx="9" style="stroke-width:2.5"/>
+      <text class="tb" x="257" y="138" text-anchor="middle" style="fill:var(--agent)">Orchestrator</text>
+      <text class="s" x="257" y="156" text-anchor="middle">depth 1</text>
+      <rect class="n" x="192" y="162" width="130" height="16" rx="4" fill="#F5F1FB" stroke="#C4ADE4"/>
+      <text class="lbA" x="257" y="174" text-anchor="middle">scope: A B C D</text>
+
+      <path class="e eA" d="M342,128 L420,80"/>
+      <path class="e eA" d="M342,164 L420,212"/>
+      <text class="lb" x="378" y="98" text-anchor="middle">task contract</text>
+      <text class="lb" x="382" y="204" text-anchor="middle">+ provenance</text>
+
+      <rect class="n ag" x="424" y="44" width="164" height="72" rx="9"/>
+      <text class="t" x="506" y="72" text-anchor="middle">Sandbox agent</text>
+      <text class="s" x="506" y="88" text-anchor="middle">depth 2</text>
+      <rect class="n" x="444" y="94" width="124" height="16" rx="4" fill="#F5F1FB" stroke="#C4ADE4"/>
+      <text class="lbA" x="506" y="106" text-anchor="middle">scope: A B</text>
+
+      <rect class="n ag" x="424" y="176" width="164" height="72" rx="9"/>
+      <text class="t" x="506" y="204" text-anchor="middle">Test-gen agent</text>
+      <text class="s" x="506" y="220" text-anchor="middle">depth 2</text>
+      <rect class="n" x="444" y="226" width="124" height="16" rx="4" fill="#F5F1FB" stroke="#C4ADE4"/>
+      <text class="lbA" x="506" y="238" text-anchor="middle">scope: C</text>
+
+      <path class="e eA" d="M588,80 L646,80"/>
+      <rect class="n ag" x="650" y="44" width="164" height="72" rx="9"/>
+      <text class="t" x="732" y="72" text-anchor="middle">Expectation agent</text>
+      <text class="s" x="732" y="88" text-anchor="middle">depth 3</text>
+      <rect class="n" x="670" y="94" width="124" height="16" rx="4" fill="#F5F1FB" stroke="#C4ADE4"/>
+      <text class="lbA" x="732" y="106" text-anchor="middle">scope: A</text>
+
+      <line class="e eR dash nomk" x1="844" y1="26" x2="844" y2="266"/>
+      <text class="lbR" x="858" y="52" >DEPTH</text>
+      <text class="lbR" x="858" y="66" >CAP · 3</text>
+      <path class="e eR" d="M814,80 L836,80"/>
+      <circle cx="844" cy="140" r="15" fill="#FCF3F2" stroke="#A8322B" stroke-width="2"/>
+      <path d="M838,134 L850,146 M850,134 L838,146" stroke="#A8322B" stroke-width="2.2" fill="none"/>
+
+      <text class="s" x="330" y="278">Scope shrinks at every hop — delegated authority is always a <tspan font-weight="800" fill="#6D3FA8">subset</tspan> of the delegator's, never equal to it, never larger.</text>
+    </svg>
+  </div>
+
+  <div class="grid g3">
+    <div class="box" style="border-left:4px solid var(--agent)">
+      <b class="t">When splitting is right</b>
+      <p class="n">Different scope, data sensitivity, credentials, owner or release cadence — the same
+      reasons we split services. That's bulkheading, and it's the reuse story: composites are assembled
+      from base agents rather than built from scratch.</p>
+    </div>
+    <div class="box" style="border-left:4px solid var(--red)">
+      <b class="t">When it's theatre</b>
+      <p class="n">Multi-agent as a <em>performance</em> strategy — five agents chatting to reach an answer
+      one could have reached. Cost, latency and an unbounded failure surface, bought for a diagram.</p>
+    </div>
+    <div class="box" style="border-left:4px solid var(--navy)">
+      <b class="t">The failure mode</b>
+      <p class="n">A wrong output from agent one becomes an <b>established fact</b> for agents two, three
+      and four. So: provenance and confidence in the message, validation at every hop — not just the first.</p>
+    </div>
+  </div>
+
+  <div class="say" style="margin-top:12px">
+    <span class="lbl">Say this</span>
+    <p>This is the same class of problem as trusting an internal service just because it's inside the
+    perimeter. <b>We learned that lesson once already</b> — I'd rather not learn it twice.</p>
+  </div>
+
+  <div class="ftr"><span>Agent-to-agent delegation</span><span>8 / 9</span></div>
+</div>
+
+
+<!-- ═══════════════ 9 · COMPOSITION ═══════════════ -->
+<div class="page">
+  <div class="ph">
+    <span class="k tl">09</span>
+    <h2>Composition — the reuse evidence</h2>
+    <div class="s">Base agents → composite capabilities, on one shared control plane</div>
+  </div>
+
+  <div class="dwrap">
+    <svg class="dg" viewBox="0 0 920 330" role="img" aria-label="Base agents composed into composite capabilities over a shared control plane">
+      <text class="cap" x="8" y="14" style="fill:var(--teal)">Composite capabilities — what the business asked for</text>
+      <rect class="n ok" x="8"   y="26" width="210" height="58" rx="9"/>
+      <text class="t" x="113" y="50" text-anchor="middle">Ops Gate</text>
+      <text class="s" x="113" y="66" text-anchor="middle">pre-production acceptance</text>
+      <rect class="n ok" x="240" y="26" width="210" height="58" rx="9"/>
+      <text class="t" x="345" y="50" text-anchor="middle">Self-Monitoring</text>
+      <text class="s" x="345" y="66" text-anchor="middle">post-handover drift</text>
+      <rect class="n ok" x="472" y="26" width="210" height="58" rx="9"/>
+      <text class="t" x="577" y="50" text-anchor="middle">Self-Healing</text>
+      <text class="s" x="577" y="66" text-anchor="middle">diagnose → remediate</text>
+      <rect class="n ok" x="704" y="26" width="208" height="58" rx="9"/>
+      <text class="t" x="808" y="50" text-anchor="middle">Spark Modernization</text>
+      <text class="s" x="808" y="66" text-anchor="middle">legacy workload uplift</text>
+
+      <!-- Ops Gate from all four -->
+      <path class="e eT thin" d="M75,168  L95,88"/>
+      <path class="e eT thin" d="M300,168 L120,88"/>
+      <path class="e eT thin" d="M535,168 L135,88"/>
+      <path class="e eT thin" d="M765,168 L155,88"/>
+      <!-- Self-Monitoring from expectation -->
+      <path class="e eT thin" d="M560,168 L345,88"/>
+      <!-- Self-Healing from expectation + sandbox -->
+      <path class="e eT thin" d="M585,168 L560,88"/>
+      <path class="e eT thin" d="M100,168 L545,88"/>
+      <!-- Modernization from test-gen + sandbox -->
+      <path class="e eT thin" d="M330,168 L790,88"/>
+      <path class="e eT thin" d="M125,168 L810,88"/>
+
+      <text class="cap" x="8" y="186" style="fill:var(--agent)">Base agents — the reusable primitives</text>
+      <rect class="n ag" x="8"   y="196" width="210" height="58" rx="9"/>
+      <text class="t" x="113" y="220" text-anchor="middle">Sandbox Creator</text>
+      <text class="s" x="113" y="236" text-anchor="middle">isolated, governed replica</text>
+      <rect class="n ag" x="240" y="196" width="210" height="58" rx="9"/>
+      <text class="t" x="345" y="220" text-anchor="middle">Test Framework Gen</text>
+      <text class="s" x="345" y="236" text-anchor="middle">unit · integration · data</text>
+      <rect class="n ag" x="472" y="196" width="210" height="58" rx="9"/>
+      <text class="t" x="577" y="220" text-anchor="middle">Data Expectations</text>
+      <text class="s" x="577" y="236" text-anchor="middle">rules · profiles · anomalies</text>
+      <rect class="n ag" x="704" y="196" width="208" height="58" rx="9"/>
+      <text class="t" x="808" y="220" text-anchor="middle">Reverse-Engineer IaC</text>
+      <text class="s" x="808" y="236" text-anchor="middle">recover the estate model</text>
+
+      <path class="e eN" d="M113,290 L113,258"/>
+      <path class="e eN" d="M345,290 L345,258"/>
+      <path class="e eN" d="M577,290 L577,258"/>
+      <path class="e eN" d="M808,290 L808,258"/>
+
+      <rect class="det" x="8" y="292" width="904" height="34" rx="8"/>
+      <text class="t" x="460" y="308" text-anchor="middle">SHARED CONTROL PLANE — registry · delegated identity · policy &amp; gates · budgets · eval harness · audit &amp; evidence</text>
+      <text class="s" x="460" y="321" text-anchor="middle">identical for all four capabilities — built once</text>
+    </svg>
+    <p class="dcap"><b>Read the crossing lines.</b> Ops Gate composes all four base agents; Self-Healing
+    reuses two; Modernization reuses two. Nothing above the middle row was built from scratch — and
+    everything sits on one deterministic control plane.</p>
+  </div>
+
+  <div class="grid g2">
+    <div class="say">
+      <span class="lbl">The T3 answer, in one diagram</span>
+      <p>The second capability cost <b>[X%]</b> of the first, because everything except the judgement step
+      already existed. That's not an assertion about reuse — <b>it's a measurement of it</b>, and this
+      picture is where the number comes from.</p>
+    </div>
+    <div class="box tint">
+      <b class="t">The line to close on</b>
+      <p class="n">"Ops Gate is shipped as a <b>skill</b> specifically so another team can adopt it without
+      me — <b>[N]</b> have. That's the test I hold myself to. A pattern that needs its author present isn't
+      reusable, it's a consultancy engagement."</p>
+    </div>
+  </div>
+
+  <div class="ftr"><span>Composition — the reuse evidence</span><span>9 / 9</span></div>
+</div>
+
+</body>
+</html>

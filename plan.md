@@ -112,9 +112,9 @@ Panel questions with prepared answers live in [qa/](qa/README.md), one folder pe
 each with the argument to understand (`framework.md` + a deck) and the answers to rehearse
 (`questions.md` + a self-test drill page).
 
-| # | Topic | Deck | Drill |
-|---|---|---|---|
-| 01 | Integration architecture in the AI era — EIP carried forward, MCP/A2A/skills placed in lineage, the deterministic/agentic test, failure modes | [architecture](qa/01-integration-architecture/integration-architecture.html) | [Q&A](qa/01-integration-architecture/questions.html) |
+| # | Topic | Deck | Patterns | Drill |
+|---|---|---|---|---|
+| 01 | Integration architecture in the AI era — EIP carried forward, MCP/A2A/skills placed in lineage, the deterministic/agentic test, failure modes | [architecture](qa/01-integration-architecture/integration-architecture.html) | [patterns](qa/01-integration-architecture/integration-patterns.html) | [Q&A](qa/01-integration-architecture/questions.html) |
 
 ## Build repository
 
