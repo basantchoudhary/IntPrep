@@ -99,7 +99,7 @@ Each capability has two decks: **architecture** for the room, **design** for the
 | Capability | Architecture (2 pages) | Design (+ backups) |
 |---|---|---|
 | **Ops Suite (all capabilities)** | [ops-suite-architecture.html](agents/ops-suite/ops-suite-architecture.html) — 7 pages | component inventory · lifecycle · interfaces · topology · security · build order |
-| Ops Gate | [ops-gate-architecture.html](agents/ops-gate/ops-gate-architecture.html) | [ops-gate-design.html](agents/ops-gate/ops-gate-design.html) · [checks.sample.yaml](agents/ops-gate/checks.sample.yaml) · [ops-acceptance-checklist.html](agents/ops-gate/ops-acceptance-checklist.html) ([md](agents/ops-gate/ops-acceptance-checklist.md)) |
+| Ops Gate | [ops-gate-architecture.html](agents/ops-gate/ops-gate-architecture.html) | [ops-gate-design.html](agents/ops-gate/ops-gate-design.html) · [checks.sample.yaml](agents/ops-gate/checks.sample.yaml) · [ops-acceptance-checklist.html](agents/ops-gate/ops-acceptance-checklist.html) ([md](agents/ops-gate/ops-acceptance-checklist.md)) · [ops-gate-implementation-design.md](agents/ops-gate/ops-gate-implementation-design.md) |
 | Ops Self-Monitoring & Self-Healing | [ops-self-healing-architecture.html](agents/ops-self-healing/ops-self-healing-architecture.html) | [ops-self-healing-design.html](agents/ops-self-healing/ops-self-healing-design.html) · [policy.sample.yaml](agents/ops-self-healing/policy.sample.yaml) |
 | Platform | [north-star-simplified.html](architecture/north-star-simplified.html) | [north-star-platform.md](architecture/north-star-platform.md) |
 | Principles | [principles.html](architecture/principles.html) | [principles.md](architecture/principles.md) |
